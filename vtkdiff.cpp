@@ -10,6 +10,10 @@
 
 #include <tclap/CmdLine.h>
 
+#include <vtkDataArray.h>
+#include <vtkPointData.h>
+#include <vtkSmartPointer.h>
+#include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridReader.h>
 
 
@@ -53,6 +57,33 @@ main(int argc, char* argv[])
     cmd.add(data_array_b_arg);
 
     cmd.parse(argc, argv);
+
+    // Read input file.
+    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader
+        = vtkXMLUnstructuredGridReader::New();
+
+    reader->SetFileName(vtk_input_arg.getValue().c_str());
+    reader->Update();
+
+    vtkDataArray* a = reader->GetOutput()->GetPointData()->GetScalars(
+        data_array_a_arg.getValue().c_str());
+    if (a == nullptr)
+    {
+        std::cerr << "Error: Scalars data array "
+            << "\'" << data_array_a_arg.getValue().c_str() << "\'"
+            << "not found in point data.\n";
+        return EXIT_FAILURE;
+    }
+
+    vtkDataArray* b = reader->GetOutput()->GetPointData()->GetScalars(
+        data_array_b_arg.getValue().c_str());
+    if (b == nullptr)
+    {
+        std::cerr << "Error: Scalars data array "
+            << "\'" << data_array_b_arg.getValue().c_str() << "\'"
+            << "not found in point data.\n";
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
