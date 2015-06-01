@@ -13,3 +13,5 @@ if(VTK_LIBRARIES)
 else()
   target_link_libraries(vtkdiff vtkHybrid)
 endif()
+
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wextra -Weffc++")
