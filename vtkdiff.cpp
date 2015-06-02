@@ -8,6 +8,8 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <iomanip>
+#include <ios>
 
 #include <tclap/CmdLine.h>
 
@@ -67,6 +69,11 @@ main(int argc, char* argv[])
     cmd.parse(argc, argv);
 
     bool const quite = quite_arg.getValue();
+
+    // Setup the stdandard output and error stream numerical formats.
+    std::cout << std::scientific << std::setprecision(16);
+    std::cerr << std::scientific << std::setprecision(16);
+
     // Read input file.
     vtkSmartPointer<vtkXMLUnstructuredGridReader> reader
         = vtkXMLUnstructuredGridReader::New();
