@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <ios>
+#include <sstream>
 
 #include <tclap/CmdLine.h>
 
@@ -65,6 +66,27 @@ main(int argc, char* argv[])
         "quite",
         "Suppress all but error output.");
     cmd.add(quite_arg);
+
+    std::stringstream double_eps_sstream;
+    double_eps_sstream << std::scientific << std::setprecision(16)
+        << std::numeric_limits<double>::epsilon();
+    TCLAP::ValueArg<double> abs_err_thr_arg(
+        "",
+        "abs",
+        "Threshold of the absolute error (" + double_eps_sstream.str() + ")",
+        false,
+        std::numeric_limits<double>::epsilon(),
+        "FLOAT");
+    cmd.add(abs_err_thr_arg);
+
+    TCLAP::ValueArg<double> rel_err_thr_arg(
+        "",
+        "rel",
+        "Threshold of the relative error (" + double_eps_sstream.str() + ")",
+        false,
+        std::numeric_limits<double>::epsilon(),
+        "FLOAT");
+    cmd.add(rel_err_thr_arg);
 
     cmd.parse(argc, argv);
 
