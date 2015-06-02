@@ -179,13 +179,13 @@ main(int argc, char* argv[])
     if (!quite_arg.getValue())
     std::cout << "Computed difference between data arrays:\n"
         << "abs l1 norm = " << abs_err_norm_l1 << "\n"
-        << "abs 2-norm = " << abs_err_norm_2_2 << "\n"
-        << "abs 2-norm^2 = " << std::sqrt(abs_err_norm_2_2) << "\n"
+        << "abs 2-norm^2 = " << abs_err_norm_2_2 << "\n"
+        << "abs 2-norm = " << std::sqrt(abs_err_norm_2_2) << "\n"
         << "abs maximum norm = " << abs_err_norm_max << "\n"
         << "\n"
         << "rel l1 norm = " << rel_err_norm_l1 << "\n"
-        << "rel 2-norm = " << rel_err_norm_2_2 << "\n"
-        << "rel 2-norm^2 = " << std::sqrt(rel_err_norm_2_2) << "\n"
+        << "rel 2-norm^2 = " << rel_err_norm_2_2 << "\n"
+        << "rel 2-norm = " << std::sqrt(rel_err_norm_2_2) << "\n"
         << "rel maximum norm = " << rel_err_norm_max << "\n";
 
     return EXIT_SUCCESS;
