@@ -58,6 +58,12 @@ main(int argc, char* argv[])
         "NAME");
     cmd.add(data_array_b_arg);
 
+    TCLAP::SwitchArg quite_arg(
+        "q",
+        "quite",
+        "Suppress all but error output.");
+    cmd.add(quite_arg);
+
     cmd.parse(argc, argv);
 
     // Read input file.
@@ -170,6 +176,7 @@ main(int argc, char* argv[])
     }
 
     // Error information
+    if (!quite_arg.getValue())
     std::cout << "Computed difference between data arrays:\n"
         << "abs l1 norm = " << abs_err_norm_l1 << "\n"
         << "abs 2-norm = " << abs_err_norm_2_2 << "\n"
