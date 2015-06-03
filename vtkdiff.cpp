@@ -186,9 +186,6 @@ main(int argc, char* argv[])
         abs_err_norm_2_2 += abs_err_i*abs_err_i;
         abs_err_norm_max = std::max(abs_err_norm_max, abs_err_i);
 
-        if (abs_err_i > abs_err_thr && !quite)
-            std::cout << i << ": abs err = " << abs_err_i << "\n";
-
         // relative error (to the data array a) and its norms:
         double const abs_a_i = std::abs(a->GetTuple1(i));
         if (abs_err_i == 0)
@@ -209,8 +206,11 @@ main(int argc, char* argv[])
         rel_err_norm_2_2 += rel_err_i*rel_err_i;
         rel_err_norm_max = std::max(rel_err_norm_max, rel_err_i);
 
-        if (rel_err_i > rel_err_thr && !quite)
+        if (abs_err_i > abs_err_thr && rel_err_i > rel_err_thr && !quite)
+        {
+            std::cout << i << ": abs err = " << abs_err_i << "\n";
             std::cout << i << ": rel err = " << rel_err_i << "\n";
+        }
     }
 
     // Error information
@@ -226,19 +226,11 @@ main(int argc, char* argv[])
             << "rel 2-norm = " << std::sqrt(rel_err_norm_2_2) << "\n"
             << "rel maximum norm = " << rel_err_norm_max << "\n";
 
-    if (rel_err_norm_max > rel_err_thr)
+    if (abs_err_norm_max > abs_err_thr && rel_err_norm_max > rel_err_thr)
     {
         if (!quite)
-            std::cout << "Relative error maximum is larger than provided "
-                "threshold.\n";
-        return EXIT_FAILURE;
-    }
-
-    if (abs_err_norm_max > abs_err_thr)
-    {
-        if (!quite)
-            std::cout << "Absolute error maximum is larger than provided "
-                "threshold.\n";
+            std::cout << "Absolute or relative error maximum is larger than "
+                "the corresponding threshold.\n";
         return EXIT_FAILURE;
     }
 
