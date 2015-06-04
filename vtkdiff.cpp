@@ -90,22 +90,22 @@ main(int argc, char* argv[])
 
     cmd.parse(argc, argv);
 
-    bool const quite = quite_arg.getValue();
-    double const abs_err_thr = abs_err_thr_arg.getValue();
-    double const rel_err_thr = abs_err_thr_arg.getValue();
+    auto const quite = quite_arg.getValue();
+    auto const abs_err_thr = abs_err_thr_arg.getValue();
+    auto const rel_err_thr = abs_err_thr_arg.getValue();
 
     // Setup the stdandard output and error stream numerical formats.
     std::cout << std::scientific << std::setprecision(16);
     std::cerr << std::scientific << std::setprecision(16);
 
     // Read input file.
-    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader
-        = vtkXMLUnstructuredGridReader::New();
+    auto reader = vtkSmartPointer<vtkXMLUnstructuredGridReader> {
+        vtkXMLUnstructuredGridReader::New() };
 
     reader->SetFileName(vtk_input_arg.getValue().c_str());
     reader->Update();
 
-    vtkDataArray* a = reader->GetOutput()->GetPointData()->GetScalars(
+    auto a = reader->GetOutput()->GetPointData()->GetScalars(
         data_array_a_arg.getValue().c_str());
     if (a == nullptr)
     {
@@ -115,7 +115,7 @@ main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    vtkDataArray* b = reader->GetOutput()->GetPointData()->GetScalars(
+    auto b = reader->GetOutput()->GetPointData()->GetScalars(
         data_array_b_arg.getValue().c_str());
     if (b == nullptr)
     {
@@ -164,7 +164,7 @@ main(int argc, char* argv[])
     double abs_err_norm_l1 = 0;
     double abs_err_norm_2_2 = 0;
     double abs_err_norm_max = 0;
-    vtkSmartPointer<vtkDoubleArray> abs_err = vtkDoubleArray::New();
+    auto abs_err = vtkSmartPointer<vtkDoubleArray>::New();
     abs_err->SetNumberOfComponents(a->GetNumberOfComponents());
     abs_err->SetNumberOfTuples(a->GetNumberOfTuples());
 
@@ -172,22 +172,22 @@ main(int argc, char* argv[])
     double rel_err_norm_l1 = 0;
     double rel_err_norm_2_2 = 0;
     double rel_err_norm_max = 0;
-    vtkSmartPointer<vtkDoubleArray> rel_err = vtkDoubleArray::New();
+    auto rel_err = vtkSmartPointer<vtkDoubleArray>::New();
     rel_err->SetNumberOfComponents(a->GetNumberOfComponents());
     rel_err->SetNumberOfTuples(a->GetNumberOfTuples());
 
-    for (vtkIdType i = 0; i < a->GetNumberOfTuples(); ++i)
+    for (auto i = 0; i < a->GetNumberOfTuples(); ++i)
     {
         // absolute error and its norms:
         abs_err->SetTuple1(i, a->GetTuple1(i) - b->GetTuple1(i));
-        double const abs_err_i = abs_err->GetTuple1(i);
+        auto const abs_err_i = abs_err->GetTuple1(i);
 
         abs_err_norm_l1 += abs_err_i;
         abs_err_norm_2_2 += abs_err_i*abs_err_i;
         abs_err_norm_max = std::max(abs_err_norm_max, abs_err_i);
 
         // relative error (to the data array a) and its norms:
-        double const abs_a_i = std::abs(a->GetTuple1(i));
+        auto const abs_a_i = std::abs(a->GetTuple1(i));
         if (abs_err_i == 0)
         {
             rel_err->SetTuple1(i, 0);
@@ -200,7 +200,7 @@ main(int argc, char* argv[])
         {
             rel_err->SetTuple1(i, abs_err_i / abs_a_i);
         }
-        double const rel_err_i = rel_err->GetTuple1(i);
+        auto const rel_err_i = rel_err->GetTuple1(i);
 
         rel_err_norm_l1 += rel_err_i;
         rel_err_norm_2_2 += rel_err_i*rel_err_i;
