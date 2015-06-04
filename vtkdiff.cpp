@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <ios>
 #include <sstream>
+#include <tuple>
 #include <type_traits>
 
 #include <tclap/CmdLine.h>
@@ -119,6 +120,48 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
         };
 }
 
+auto readDataArraysFromFile(
+        std::string const& file_name,
+        std::string const& data_array_a_name,
+        std::string const& data_array_b_name)
+    -> std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
+{
+    // Read input file.
+    auto reader = vtkXMLUnstructuredGridReader::New();
+
+    reader->SetFileName(file_name.c_str());
+    reader->Update();
+
+    // Get arrays
+    auto a = vtkSmartPointer<vtkDataArray> {
+        reader->GetOutput()->GetPointData()->GetScalars(
+        data_array_a_name.c_str()) };
+    auto b = vtkSmartPointer<vtkDataArray> {
+        reader->GetOutput()->GetPointData()->GetScalars(
+        data_array_b_name.c_str()) };
+
+    reader->Delete();
+
+    // Check arrays' validity
+    if (!a)
+    {
+        std::cerr << "Error: Scalars data array "
+            << "\'" << data_array_a_name.c_str() << "\'"
+            << "not found in point data.\n";
+        return std::make_tuple(false, nullptr, nullptr);
+    }
+
+    if (!b)
+    {
+        std::cerr << "Error: Scalars data array "
+            << "\'" << data_array_b_name.c_str() << "\'"
+            << "not found in point data.\n";
+        return std::make_tuple(false, nullptr, nullptr);
+    }
+
+    return std::make_tuple(true, a, b);
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -128,32 +171,19 @@ main(int argc, char* argv[])
     std::cout << std::scientific << std::setprecision(16);
     std::cerr << std::scientific << std::setprecision(16);
 
-    // Read input file.
-    auto reader = vtkSmartPointer<vtkXMLUnstructuredGridReader> {
-        vtkXMLUnstructuredGridReader::New() };
+    // Read arrays from input file.
+    bool read_successful;
+    vtkSmartPointer<vtkDataArray> a;
+    vtkSmartPointer<vtkDataArray> b;
 
-    reader->SetFileName(args.vtk_input.c_str());
-    reader->Update();
-
-    auto a = reader->GetOutput()->GetPointData()->GetScalars(
-        args.data_array_a.c_str());
-    if (a == nullptr)
-    {
-        std::cerr << "Error: Scalars data array "
-            << "\'" << args.data_array_a.c_str() << "\'"
-            << "not found in point data.\n";
+    std::tie(read_successful, a, b)
+        = readDataArraysFromFile(
+            args.vtk_input,
+            args.data_array_a,
+            args.data_array_b);
+    if (!read_successful)
         return EXIT_FAILURE;
-    }
 
-    auto b = reader->GetOutput()->GetPointData()->GetScalars(
-        args.data_array_b.c_str());
-    if (b == nullptr)
-    {
-        std::cerr << "Error: Scalars data array "
-            << "\'" << args.data_array_b.c_str() << "\'"
-            << "not found in point data.\n";
-        return EXIT_FAILURE;
-    }
 
     // Check similarity of the data arrays.
 
