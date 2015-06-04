@@ -33,10 +33,18 @@ auto float_to_string(T const& v) -> std::string
     return double_eps_sstream.str();
 }
 
-int
-main(int argc, char* argv[])
+struct Args
 {
-    // Parse CLI arguments.
+    bool const quite;
+    double const abs_err_thr;
+    double const rel_err_thr;
+    std::string const vtk_input;
+    std::string const data_array_a;
+    std::string const data_array_b;
+};
+
+auto parseCommandLine(int argc, char* argv[]) -> Args
+{
     TCLAP::CmdLine cmd("VtkDiff software.\n"
             "Copyright (c) 2015, OpenGeoSys Community "
             "(http://www.opengeosys.org) "
@@ -101,9 +109,20 @@ main(int argc, char* argv[])
 
     cmd.parse(argc, argv);
 
-    auto const quite = quite_arg.getValue();
-    auto const abs_err_thr = abs_err_thr_arg.getValue();
-    auto const rel_err_thr = abs_err_thr_arg.getValue();
+    return Args
+        { quite_arg.getValue()
+        , abs_err_thr_arg.getValue()
+        , abs_err_thr_arg.getValue()
+        , vtk_input_arg.getValue()
+        , data_array_a_arg.getValue()
+        , data_array_b_arg.getValue()
+        };
+}
+
+int
+main(int argc, char* argv[])
+{
+    auto const args = parseCommandLine(argc, argv);
 
     // Setup the stdandard output and error stream numerical formats.
     std::cout << std::scientific << std::setprecision(16);
@@ -113,25 +132,25 @@ main(int argc, char* argv[])
     auto reader = vtkSmartPointer<vtkXMLUnstructuredGridReader> {
         vtkXMLUnstructuredGridReader::New() };
 
-    reader->SetFileName(vtk_input_arg.getValue().c_str());
+    reader->SetFileName(args.vtk_input.c_str());
     reader->Update();
 
     auto a = reader->GetOutput()->GetPointData()->GetScalars(
-        data_array_a_arg.getValue().c_str());
+        args.data_array_a.c_str());
     if (a == nullptr)
     {
         std::cerr << "Error: Scalars data array "
-            << "\'" << data_array_a_arg.getValue().c_str() << "\'"
+            << "\'" << args.data_array_a.c_str() << "\'"
             << "not found in point data.\n";
         return EXIT_FAILURE;
     }
 
     auto b = reader->GetOutput()->GetPointData()->GetScalars(
-        data_array_b_arg.getValue().c_str());
+        args.data_array_b.c_str());
     if (b == nullptr)
     {
         std::cerr << "Error: Scalars data array "
-            << "\'" << data_array_b_arg.getValue().c_str() << "\'"
+            << "\'" << args.data_array_b.c_str() << "\'"
             << "not found in point data.\n";
         return EXIT_FAILURE;
     }
@@ -217,7 +236,7 @@ main(int argc, char* argv[])
         rel_err_norm_2_2 += rel_err_i*rel_err_i;
         rel_err_norm_max = std::max(rel_err_norm_max, rel_err_i);
 
-        if (abs_err_i > abs_err_thr && rel_err_i > rel_err_thr && !quite)
+        if (abs_err_i > args.abs_err_thr && rel_err_i > args.rel_err_thr && !args.quite)
         {
             std::cout << i << ": abs err = " << abs_err_i << "\n";
             std::cout << i << ": rel err = " << rel_err_i << "\n";
@@ -225,7 +244,7 @@ main(int argc, char* argv[])
     }
 
     // Error information
-    if (!quite)
+    if (!args.quite)
         std::cout << "Computed difference between data arrays:\n"
             << "abs l1 norm = " << abs_err_norm_l1 << "\n"
             << "abs 2-norm^2 = " << abs_err_norm_2_2 << "\n"
@@ -237,9 +256,9 @@ main(int argc, char* argv[])
             << "rel 2-norm = " << std::sqrt(rel_err_norm_2_2) << "\n"
             << "rel maximum norm = " << rel_err_norm_max << "\n";
 
-    if (abs_err_norm_max > abs_err_thr && rel_err_norm_max > rel_err_thr)
+    if (abs_err_norm_max > args.abs_err_thr && rel_err_norm_max > args.rel_err_thr)
     {
-        if (!quite)
+        if (!args.quite)
             std::cout << "Absolute or relative error maximum is larger than "
                 "the corresponding threshold.\n";
         return EXIT_FAILURE;
