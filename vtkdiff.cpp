@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <ios>
 #include <sstream>
+#include <type_traits>
 
 #include <tclap/CmdLine.h>
 
@@ -21,6 +22,16 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridReader.h>
 
+template <typename T>
+auto float_to_string(T const& v) -> std::string
+{
+    static_assert(std::is_floating_point<T>::value,
+        "float_to_string requires a floating point input type.");
+
+    std::stringstream double_eps_sstream;
+    double_eps_sstream << std::scientific << std::setprecision(16) << v;
+    return double_eps_sstream.str();
+}
 
 int
 main(int argc, char* argv[])
@@ -67,13 +78,13 @@ main(int argc, char* argv[])
         "Suppress all but error output.");
     cmd.add(quite_arg);
 
-    std::stringstream double_eps_sstream;
-    double_eps_sstream << std::scientific << std::setprecision(16)
-        << std::numeric_limits<double>::epsilon();
+    auto const double_eps_string = float_to_string(
+        std::numeric_limits<double>::epsilon());
+
     TCLAP::ValueArg<double> abs_err_thr_arg(
         "",
         "abs",
-        "Threshold of the absolute error (" + double_eps_sstream.str() + ")",
+        "Threshold of the absolute error (" + double_eps_string + ")",
         false,
         std::numeric_limits<double>::epsilon(),
         "FLOAT");
@@ -82,7 +93,7 @@ main(int argc, char* argv[])
     TCLAP::ValueArg<double> rel_err_thr_arg(
         "",
         "rel",
-        "Threshold of the relative error (" + double_eps_sstream.str() + ")",
+        "Threshold of the relative error (" + double_eps_string + ")",
         false,
         std::numeric_limits<double>::epsilon(),
         "FLOAT");
