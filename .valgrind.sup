@@ -1,0 +1,46 @@
+{
+   poppler
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   obj:/usr/lib/libpoppler.so.*
+   ...
+}
+{
+   gobject
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   obj:/usr/lib/libgobject-2.0.so*
+   ...
+}
+
+{
+   vtkDomainsChemistry-6.1
+   Memcheck:Leak
+   fun:_Znwm
+   fun:allocate
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
+   ...
+}
+{
+   glibc
+   Memcheck:Leak
+   fun:malloc
+   fun:pool
+   fun:__static_initialization_and_destruction_0
+   fun:_GLOBAL__sub_I_eh_alloc.cc
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/usr/lib/ld-*.so
+}
+
+{
+   nvidia_libGL
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   obj:/usr/lib/nvidia/libGL.so.*
+   ...
+}
