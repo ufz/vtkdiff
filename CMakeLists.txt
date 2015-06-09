@@ -1,17 +1,24 @@
 cmake_minimum_required(VERSION 3.1)
 
-find_package(VTK REQUIRED)
-include(${VTK_USE_FILE})
-
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    find_package(VTK REQUIRED)
+    include(${VTK_USE_FILE})
+endif()
 
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/tclap/include)
 
 add_executable(vtkdiff vtkdiff.cpp)
 
-if(VTK_LIBRARIES)
-  target_link_libraries(vtkdiff ${VTK_LIBRARIES})
+
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    if(VTK_LIBRARIES)
+        target_link_libraries(vtkdiff ${VTK_LIBRARIES})
+    else()
+        target_link_libraries(vtkdiff vtkHybrid)
+    endif()
 else()
-  target_link_libraries(vtkdiff vtkHybrid)
+    target_link_libraries(vtkdiff ${CATALYST_LIBRARIES})
+    ADD_CATALYST_DEPENDENCY(vtkdiff)
 endif()
 
 # Set compiler helper variables
@@ -31,7 +38,7 @@ if(COMPILER_IS_GCC OR COMPILER_IS_CLANG)
 endif()
 
 if(COMPILER_IS_INTEL)
-	set(CMAKE_CXX_FLAGS "-std=c++11 -xHOST -no-prec-div")
+    set(CMAKE_CXX_FLAGS "-std=c++11 -xHOST -no-prec-div")
 endif()
 
 if (COMPILER_IS_MSVC)
