@@ -36,14 +36,15 @@ auto float_to_string(T const& v) -> std::string
     return double_eps_sstream.str();
 }
 
-bool stringEndsWith(std::string const &fullString, std::string const &ending)
+bool stringEndsWith(std::string const& str, std::string const& ending)
 {
-    if (fullString.length() >= ending.length())
-        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
-    else
+    if (str.length() < ending.length())
         return false;
-}
 
+    // now the difference is non-negative, no underflow possible.
+    auto const string_end_length = str.length() - ending.length();
+    return str.compare(string_end_length, ending.length(), ending) == 0;
+}
 
 struct Args
 {
