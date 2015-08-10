@@ -214,29 +214,29 @@ main(int argc, char* argv[])
     vtkSmartPointer<vtkDataArray> a;
     vtkSmartPointer<vtkDataArray> b;
 
-    if(stringEndsWith(args.vtk_input_a, ".vtu"))
-        std::tie(read_successful, a, b)
-            = readDataArraysFromFile<vtkXMLUnstructuredGridReader>(
+    if (stringEndsWith(args.vtk_input_a, ".vtu"))
+        std::tie(read_successful, a, b) =
+            readDataArraysFromFile<vtkXMLUnstructuredGridReader>(
                 args.vtk_input_a,
                 args.vtk_input_b,
                 args.data_array_a,
                 args.data_array_b);
-    else if(stringEndsWith(args.vtk_input_a, ".vtk"))
-        std::tie(read_successful, a, b)
-            = readDataArraysFromFile<vtkUnstructuredGridReader>(
+    else if (stringEndsWith(args.vtk_input_a, ".vtk"))
+        std::tie(read_successful, a, b) =
+            readDataArraysFromFile<vtkUnstructuredGridReader>(
                 args.vtk_input_a,
                 args.vtk_input_b,
                 args.data_array_a,
                 args.data_array_b);
     else
     {
-        std::cerr << "Invalid file type! Only .vtu and .vtk files are supported." << "\n";
+        std::cerr << "Invalid file type! "
+                     "Only .vtu and .vtk files are supported.\n";
         return EXIT_FAILURE;
     }
 
     if (!read_successful)
         return EXIT_FAILURE;
-
 
     // Check similarity of the data arrays.
 
