@@ -23,6 +23,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridReader.h>
+#include <vtkUnstructuredGridReader.h>
 
 template <typename T>
 auto float_to_string(T const& v) -> std::string
@@ -34,6 +35,15 @@ auto float_to_string(T const& v) -> std::string
     double_eps_sstream << std::scientific << std::setprecision(16) << v;
     return double_eps_sstream.str();
 }
+
+bool stringEndsWith(std::string const &fullString, std::string const &ending)
+{
+    if (fullString.length() >= ending.length())
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    else
+        return false;
+}
+
 
 struct Args
 {
@@ -121,6 +131,7 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
         };
 }
 
+template<typename T>
 auto readDataArraysFromFile(
         std::string const& file_name,
         std::string const& data_array_a_name,
@@ -128,7 +139,7 @@ auto readDataArraysFromFile(
     -> std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
 {
     // Read input file.
-    auto reader = vtkXMLUnstructuredGridReader::New();
+    auto reader = T::New();
 
     reader->SetFileName(file_name.c_str());
     reader->Update();
@@ -177,11 +188,24 @@ main(int argc, char* argv[])
     vtkSmartPointer<vtkDataArray> a;
     vtkSmartPointer<vtkDataArray> b;
 
-    std::tie(read_successful, a, b)
-        = readDataArraysFromFile(
-            args.vtk_input,
-            args.data_array_a,
-            args.data_array_b);
+    if(stringEndsWith(args.vtk_input, ".vtu"))
+        std::tie(read_successful, a, b)
+            = readDataArraysFromFile<vtkXMLUnstructuredGridReader>(
+                args.vtk_input,
+                args.data_array_a,
+                args.data_array_b);
+    else if(stringEndsWith(args.vtk_input, ".vtk"))
+        std::tie(read_successful, a, b)
+            = readDataArraysFromFile<vtkUnstructuredGridReader>(
+                args.vtk_input,
+                args.data_array_a,
+                args.data_array_b);
+    else
+    {
+        std::cerr << "Invalid file type! Only .vtu and .vtk files are supported." << "\n";
+        return EXIT_FAILURE;
+    }
+
     if (!read_successful)
         return EXIT_FAILURE;
 
