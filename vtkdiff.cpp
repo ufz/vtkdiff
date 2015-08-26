@@ -23,7 +23,6 @@
 #include <vtkSmartPointer.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridReader.h>
-#include <vtkUnstructuredGridReader.h>
 
 template <typename T>
 auto float_to_string(T const& v) -> std::string
@@ -221,17 +220,10 @@ main(int argc, char* argv[])
                 args.vtk_input_b,
                 args.data_array_a,
                 args.data_array_b);
-    else if (stringEndsWith(args.vtk_input_a, ".vtk"))
-        std::tie(read_successful, a, b) =
-            readDataArraysFromFile<vtkUnstructuredGridReader>(
-                args.vtk_input_a,
-                args.vtk_input_b,
-                args.data_array_a,
-                args.data_array_b);
     else
     {
         std::cerr << "Invalid file type! "
-                     "Only .vtu and .vtk files are supported.\n";
+                     "Only .vtu files are supported.\n";
         return EXIT_FAILURE;
     }
 
