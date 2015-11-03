@@ -17,8 +17,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         target_link_libraries(vtkdiff vtkHybrid vtkIOXML)
     endif()
 else()
-    target_link_libraries(vtkdiff ${CATALYST_LIBRARIES})
-    ADD_CATALYST_DEPENDENCY(vtkdiff)
+    target_link_libraries(vtkdiff ${VTK_LIBRARIES})
+    ADD_VTK_DEPENDENCY(vtkdiff)
 endif()
 
 # Set compiler helper variables
