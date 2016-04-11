@@ -1,29 +1,24 @@
 cmake_minimum_required(VERSION 3.1)
 
-if(NOT DEFINED CONAN_LIBS)
-    if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-        find_package(VTK REQUIRED)
-        include(${VTK_USE_FILE})
-    endif()
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    find_package(VTK REQUIRED)
+    include(${VTK_USE_FILE})
 endif()
 
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/tclap/include)
 
 add_executable(vtkdiff vtkdiff.cpp)
 
-if(DEFINED CONAN_LIBS)
-    target_link_libraries(vtkdiff ${CONAN_LIBS})
-else()
-    if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-        if(VTK_LIBRARIES)
-            target_link_libraries(vtkdiff ${VTK_LIBRARIES})
-        else()
-            target_link_libraries(vtkdiff vtkHybrid vtkIOXML)
-        endif()
-    else()
+
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    if(VTK_LIBRARIES)
         target_link_libraries(vtkdiff ${VTK_LIBRARIES})
-        ADD_VTK_DEPENDENCY(vtkdiff)
+    else()
+        target_link_libraries(vtkdiff vtkHybrid vtkIOXML)
     endif()
+else()
+    target_link_libraries(vtkdiff ${VTK_LIBRARIES})
+    ADD_VTK_DEPENDENCY(vtkdiff)
 endif()
 
 # Set compiler helper variables
