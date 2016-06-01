@@ -48,6 +48,7 @@ bool stringEndsWith(std::string const& str, std::string const& ending)
 struct Args
 {
     bool const quiet;
+    bool const verbose;
     double const abs_err_thr;
     double const rel_err_thr;
     std::string const vtk_input_a;
@@ -107,6 +108,12 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
         "Suppress all but error output.");
     cmd.add(quiet_arg);
 
+    TCLAP::SwitchArg verbose_arg(
+        "v",
+        "verbose",
+        "Also print which values differ.");
+    cmd.add(verbose_arg);
+
     auto const double_eps_string = float_to_string(
         std::numeric_limits<double>::epsilon());
 
@@ -132,6 +139,7 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
 
     return Args
         { quiet_arg.getValue()
+        , verbose_arg.getValue()
         , abs_err_thr_arg.getValue()
         , abs_err_thr_arg.getValue()
         , vtk_input_a_arg.getValue()
@@ -312,7 +320,7 @@ main(int argc, char* argv[])
         rel_err_norm_2_2 += rel_err_i*rel_err_i;
         rel_err_norm_max = std::max(rel_err_norm_max, rel_err_i);
 
-        if (abs_err_i > args.abs_err_thr && rel_err_i > args.rel_err_thr && !args.quiet)
+        if (abs_err_i > args.abs_err_thr && rel_err_i > args.rel_err_thr && args.verbose)
         {
             std::cout << std::setw(4) << i
                       << ": abs err = " << std::setw(digits10+7) << abs_err_i
