@@ -294,7 +294,7 @@ main(int argc, char* argv[])
     {
         // absolute error and its norms:
         abs_err->SetTuple1(i, a->GetTuple1(i) - b->GetTuple1(i));
-        auto const abs_err_i = abs_err->GetTuple1(i);
+        auto const abs_err_i = std::abs(abs_err->GetTuple1(i));
 
         abs_err_norm_l1 += abs_err_i;
         abs_err_norm_2_2 += abs_err_i*abs_err_i;
