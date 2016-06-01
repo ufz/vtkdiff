@@ -113,7 +113,7 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
     TCLAP::ValueArg<double> abs_err_thr_arg(
         "",
         "abs",
-        "Threshold of the absolute error (" + double_eps_string + ")",
+        "Tolerance for the absolute error in the maximum norm (" + double_eps_string + ")",
         false,
         std::numeric_limits<double>::epsilon(),
         "FLOAT");
@@ -122,7 +122,7 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
     TCLAP::ValueArg<double> rel_err_thr_arg(
         "",
         "rel",
-        "Threshold of the relative error (" + double_eps_string + ")",
+        "Tolerance for the componentwise relative error (" + double_eps_string + ")",
         false,
         std::numeric_limits<double>::epsilon(),
         "FLOAT");
@@ -333,7 +333,7 @@ main(int argc, char* argv[])
             << "rel l2-norm      = " << std::sqrt(rel_err_norm_2_2) << "\n"
             << "rel maximum norm = " << rel_err_norm_max << "\n";
 
-    if (abs_err_norm_max > args.abs_err_thr && rel_err_norm_max > args.rel_err_thr)
+    if (abs_err_norm_max > args.abs_err_thr || rel_err_norm_max > args.rel_err_thr)
     {
         if (!args.quiet)
             std::cout << "Absolute or relative error maximum is larger than "
