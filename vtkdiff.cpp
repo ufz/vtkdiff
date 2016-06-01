@@ -47,7 +47,7 @@ bool stringEndsWith(std::string const& str, std::string const& ending)
 
 struct Args
 {
-    bool const quite;
+    bool const quiet;
     double const abs_err_thr;
     double const rel_err_thr;
     std::string const vtk_input_a;
@@ -101,11 +101,11 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
         "NAME");
     cmd.add(data_array_b_arg);
 
-    TCLAP::SwitchArg quite_arg(
+    TCLAP::SwitchArg quiet_arg(
         "q",
-        "quite",
+        "quiet",
         "Suppress all but error output.");
-    cmd.add(quite_arg);
+    cmd.add(quiet_arg);
 
     auto const double_eps_string = float_to_string(
         std::numeric_limits<double>::epsilon());
@@ -131,7 +131,7 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
     cmd.parse(argc, argv);
 
     return Args
-        { quite_arg.getValue()
+        { quiet_arg.getValue()
         , abs_err_thr_arg.getValue()
         , abs_err_thr_arg.getValue()
         , vtk_input_a_arg.getValue()
@@ -202,11 +202,12 @@ auto readDataArraysFromFile(
 int
 main(int argc, char* argv[])
 {
+    auto const digits10 = std::numeric_limits<double>::digits10;
     auto const args = parseCommandLine(argc, argv);
 
-    // Setup the stdandard output and error stream numerical formats.
-    std::cout << std::scientific << std::setprecision(16);
-    std::cerr << std::scientific << std::setprecision(16);
+    // Setup the standard output and error stream numerical formats.
+    std::cout << std::scientific << std::setprecision(digits10);
+    std::cerr << std::scientific << std::setprecision(digits10);
 
     // Read arrays from input file.
     bool read_successful;
@@ -311,29 +312,30 @@ main(int argc, char* argv[])
         rel_err_norm_2_2 += rel_err_i*rel_err_i;
         rel_err_norm_max = std::max(rel_err_norm_max, rel_err_i);
 
-        if (abs_err_i > args.abs_err_thr && rel_err_i > args.rel_err_thr && !args.quite)
+        if (abs_err_i > args.abs_err_thr && rel_err_i > args.rel_err_thr && !args.quiet)
         {
-            std::cout << i << ": abs err = " << abs_err_i << "\n";
-            std::cout << i << ": rel err = " << rel_err_i << "\n";
+            std::cout << std::setw(4) << i
+                      << ": abs err = " << std::setw(digits10+7) << abs_err_i
+                      << ", rel err = " << std::setw(digits10+7) << rel_err_i << "\n";
         }
     }
 
     // Error information
-    if (!args.quite)
+    if (!args.quiet)
         std::cout << "Computed difference between data arrays:\n"
-            << "abs l1 norm = " << abs_err_norm_l1 << "\n"
-            << "abs 2-norm^2 = " << abs_err_norm_2_2 << "\n"
-            << "abs 2-norm = " << std::sqrt(abs_err_norm_2_2) << "\n"
+            << "abs l1 norm      = " << abs_err_norm_l1 << "\n"
+            << "abs l2-norm^2    = " << abs_err_norm_2_2 << "\n"
+            << "abs l2-norm      = " << std::sqrt(abs_err_norm_2_2) << "\n"
             << "abs maximum norm = " << abs_err_norm_max << "\n"
             << "\n"
-            << "rel l1 norm = " << rel_err_norm_l1 << "\n"
-            << "rel 2-norm^2 = " << rel_err_norm_2_2 << "\n"
-            << "rel 2-norm = " << std::sqrt(rel_err_norm_2_2) << "\n"
+            << "rel l1 norm      = " << rel_err_norm_l1 << "\n"
+            << "rel l2-norm^2    = " << rel_err_norm_2_2 << "\n"
+            << "rel l2-norm      = " << std::sqrt(rel_err_norm_2_2) << "\n"
             << "rel maximum norm = " << rel_err_norm_max << "\n";
 
     if (abs_err_norm_max > args.abs_err_thr && rel_err_norm_max > args.rel_err_thr)
     {
-        if (!args.quite)
+        if (!args.quiet)
             std::cout << "Absolute or relative error maximum is larger than "
                 "the corresponding threshold.\n";
         return EXIT_FAILURE;
