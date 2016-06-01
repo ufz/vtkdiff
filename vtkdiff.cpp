@@ -150,12 +150,12 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
 }
 
 template<typename T>
-auto readDataArraysFromFile(
+std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
+readDataArraysFromFile(
         std::string const& file_a_name,
         std::string const& file_b_name,
         std::string const& data_array_a_name,
         std::string const& data_array_b_name)
-    -> std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
 {
     // Read input file.
     auto reader_a = T::New();
@@ -207,8 +207,7 @@ auto readDataArraysFromFile(
     return std::make_tuple(true, a, b);
 }
 
-int
-main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     auto const digits10 = std::numeric_limits<double>::digits10;
     auto const args = parseCommandLine(argc, argv);
@@ -256,19 +255,23 @@ main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    auto const num_tuples = a->GetNumberOfTuples();
     // Number of components
-    if (a->GetNumberOfComponents() != b->GetNumberOfComponents())
+    if (num_tuples != b->GetNumberOfTuples())
     {
-        std::cerr << "Number of components differ:\n"
-            << a->GetNumberOfComponents() << " in data array a and "
-            << b->GetNumberOfComponents() << " in data array b\n";
+        std::cerr << "Number of tuples differ:\n"
+            << num_tuples << " in data array a and "
+            << b->GetNumberOfTuples() << " in data array b\n";
         return EXIT_FAILURE;
     }
 
-    // For now only scalar type arrays are allowed.
-    if (a->GetNumberOfComponents() != 1)
+    auto const num_components = a->GetNumberOfComponents();
+    // Number of components
+    if (num_components != b->GetNumberOfComponents())
     {
-        std::cerr << "Only scalar data arrays are supported.\n";
+        std::cerr << "Number of components differ:\n"
+            << num_components << " in data array a and "
+            << b->GetNumberOfComponents() << " in data array b\n";
         return EXIT_FAILURE;
     }
 
@@ -278,53 +281,44 @@ main(int argc, char* argv[])
     double abs_err_norm_l1 = 0;
     double abs_err_norm_2_2 = 0;
     double abs_err_norm_max = 0;
-    auto abs_err = vtkSmartPointer<vtkDoubleArray>::New();
-    abs_err->SetNumberOfComponents(a->GetNumberOfComponents());
-    abs_err->SetNumberOfTuples(a->GetNumberOfTuples());
 
     // Relative error and norms.
     double rel_err_norm_l1 = 0;
     double rel_err_norm_2_2 = 0;
     double rel_err_norm_max = 0;
-    auto rel_err = vtkSmartPointer<vtkDoubleArray>::New();
-    rel_err->SetNumberOfComponents(a->GetNumberOfComponents());
-    rel_err->SetNumberOfTuples(a->GetNumberOfTuples());
 
-    for (auto i = 0; i < a->GetNumberOfTuples(); ++i)
+    for (auto tuple_idx = 0; tuple_idx < num_tuples; ++tuple_idx)
     {
-        // absolute error and its norms:
-        abs_err->SetTuple1(i, a->GetTuple1(i) - b->GetTuple1(i));
-        auto const abs_err_i = std::abs(abs_err->GetTuple1(i));
-
-        abs_err_norm_l1 += abs_err_i;
-        abs_err_norm_2_2 += abs_err_i*abs_err_i;
-        abs_err_norm_max = std::max(abs_err_norm_max, abs_err_i);
-
-        // relative error (to the data array a) and its norms:
-        auto const abs_a_i = std::abs(a->GetTuple1(i));
-        if (abs_err_i == 0)
+        for (auto component_idx = 0; component_idx < num_components; ++component_idx)
         {
-            rel_err->SetTuple1(i, 0);
-        }
-        else if (abs_a_i == 0)
-        {
-            rel_err->SetTuple1(i, std::numeric_limits<double>::infinity());
-        }
-        else
-        {
-            rel_err->SetTuple1(i, abs_err_i / abs_a_i);
-        }
-        auto const rel_err_i = rel_err->GetTuple1(i);
+            auto const a_comp = a->GetComponent(tuple_idx, component_idx);
+            auto const abs_err = std::abs(a_comp - b->GetComponent(tuple_idx, component_idx));
 
-        rel_err_norm_l1 += rel_err_i;
-        rel_err_norm_2_2 += rel_err_i*rel_err_i;
-        rel_err_norm_max = std::max(rel_err_norm_max, rel_err_i);
+            abs_err_norm_l1  += abs_err;
+            abs_err_norm_2_2 += abs_err*abs_err;
+            abs_err_norm_max  = std::max(abs_err_norm_max, abs_err);
 
-        if (abs_err_i > args.abs_err_thr && rel_err_i > args.rel_err_thr && args.verbose)
-        {
-            std::cout << std::setw(4) << i
-                      << ": abs err = " << std::setw(digits10+7) << abs_err_i
-                      << ", rel err = " << std::setw(digits10+7) << rel_err_i << "\n";
+            // relative error and its norms:
+            double rel_err;
+
+            if (abs_err == 0.0) {
+                rel_err = 0.0;
+            } else if (a_comp == 0.0) {
+                rel_err = std::numeric_limits<double>::infinity();
+            } else {
+                rel_err = abs_err / std::abs(a_comp);
+            }
+
+            rel_err_norm_l1  += rel_err;
+            rel_err_norm_2_2 += rel_err*rel_err;
+            rel_err_norm_max  = std::max(rel_err_norm_max, rel_err);
+
+            if ((abs_err > args.abs_err_thr || rel_err > args.rel_err_thr) && args.verbose)
+            {
+                std::cout << std::setw(4) << tuple_idx
+                          << ": abs err = " << std::setw(digits10+7) << abs_err
+                          << ", rel err = " << std::setw(digits10+7) << rel_err << "\n";
+            }
         }
     }
 
