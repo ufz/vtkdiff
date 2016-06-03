@@ -292,7 +292,8 @@ int main(int argc, char* argv[])
         for (auto component_idx = 0; component_idx < num_components; ++component_idx)
         {
             auto const a_comp = a->GetComponent(tuple_idx, component_idx);
-            auto const abs_err = std::abs(a_comp - b->GetComponent(tuple_idx, component_idx));
+            auto const b_comp = b->GetComponent(tuple_idx, component_idx);
+            auto const abs_err = std::abs(a_comp - b_comp);
 
             abs_err_norm_l1  += abs_err;
             abs_err_norm_2_2 += abs_err*abs_err;
@@ -303,17 +304,17 @@ int main(int argc, char* argv[])
 
             if (abs_err == 0.0) {
                 rel_err = 0.0;
-            } else if (a_comp == 0.0) {
+            } else if (a_comp == 0.0 || b_comp == 0.0) {
                 rel_err = std::numeric_limits<double>::infinity();
             } else {
-                rel_err = abs_err / std::abs(a_comp);
+                rel_err = abs_err / std::min(std::abs(a_comp), std::abs(b_comp));
             }
 
             rel_err_norm_l1  += rel_err;
             rel_err_norm_2_2 += rel_err*rel_err;
             rel_err_norm_max  = std::max(rel_err_norm_max, rel_err);
 
-            if ((abs_err > args.abs_err_thr || rel_err > args.rel_err_thr) && args.verbose)
+            if (abs_err > args.abs_err_thr && rel_err > args.rel_err_thr && args.verbose)
             {
                 std::cout << std::setw(4) << tuple_idx
                           << ": abs err = " << std::setw(digits10+7) << abs_err
@@ -335,7 +336,7 @@ int main(int argc, char* argv[])
             << "rel l2-norm      = " << std::sqrt(rel_err_norm_2_2) << "\n"
             << "rel maximum norm = " << rel_err_norm_max << "\n";
 
-    if (abs_err_norm_max > args.abs_err_thr || rel_err_norm_max > args.rel_err_thr)
+    if (abs_err_norm_max > args.abs_err_thr && rel_err_norm_max > args.rel_err_thr)
     {
         if (!args.quiet)
             std::cout << "Absolute or relative error maximum is larger than "
