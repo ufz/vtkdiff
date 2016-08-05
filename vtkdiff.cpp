@@ -17,6 +17,7 @@
 
 #include <tclap/CmdLine.h>
 
+#include <vtkCommand.h>
 #include <vtkDataArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
@@ -149,6 +150,24 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
         };
 }
 
+template <typename T>
+class ErrorCallback : public vtkCommand
+{
+public:
+    vtkTypeMacro(ErrorCallback, vtkCommand);
+
+    static ErrorCallback<T>* New() { return new ErrorCallback<T>; }
+
+    void Execute(vtkObject* caller, unsigned long vtkNotUsed(eventId),
+                 void* vtkNotUsed(callData))
+    {
+        auto* reader = static_cast<T*>(caller);
+        std::cerr << "Error reading file `" << reader->GetFileName()
+                  << "'. Aborting." << std::endl;
+        std::abort();
+    }
+};
+
 template<typename T>
 std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
 readDataArraysFromFile(
@@ -158,34 +177,37 @@ readDataArraysFromFile(
         std::string const& data_array_b_name)
 {
     // Read input file.
-    auto reader_a = T::New();
+    vtkSmartPointer<T> reader = vtkSmartPointer<T>::New();
 
-    reader_a->SetFileName(file_a_name.c_str());
-    reader_a->Update();
+    vtkSmartPointer<ErrorCallback<T>> errorCallback =
+        vtkSmartPointer<ErrorCallback<T>>::New();
+    reader->AddObserver(vtkCommand::ErrorEvent, errorCallback);
+
+    reader->SetFileName(file_a_name.c_str());
+    reader->Update();
 
     // Get arrays
-    auto a = vtkSmartPointer<vtkDataArray> {
-        reader_a->GetOutput()->GetPointData()->GetScalars(
-        data_array_a_name.c_str()) };
+    auto a = vtkSmartPointer<vtkDataArray>{
+        reader->GetOutput()->GetPointData()->GetScalars(
+            data_array_a_name.c_str())};
     vtkSmartPointer<vtkDataArray> b;
-    if(file_b_name.size() == 0)
-    {
-        b = vtkSmartPointer<vtkDataArray> {
-            reader_a->GetOutput()->GetPointData()->GetScalars(
-            data_array_b_name.c_str()) };
+    if (file_b_name.empty()) {
+        if (data_array_a_name == data_array_b_name) {
+            std::cerr << "Error: You are trying to compare data array `"
+                      << data_array_a_name << "' from file `" << file_a_name
+                      << "' to itself. Aborting.\n";
+            std::abort();
+        }
+        b = vtkSmartPointer<vtkDataArray>{
+            reader->GetOutput()->GetPointData()->GetScalars(
+                data_array_b_name.c_str())};
+    } else {
+        reader->SetFileName(file_b_name.c_str());
+        reader->Update();
+        b = vtkSmartPointer<vtkDataArray>{
+            reader->GetOutput()->GetPointData()->GetScalars(
+                data_array_b_name.c_str())};
     }
-    else
-    {
-        auto reader_b = T::New();
-        reader_b->SetFileName(file_b_name.c_str());
-        reader_b->Update();
-        b = vtkSmartPointer<vtkDataArray> {
-            reader_b->GetOutput()->GetPointData()->GetScalars(
-            data_array_b_name.c_str()) };
-        reader_b->Delete();
-    }
-
-    reader_a->Delete();
 
     // Check arrays' validity
     if (!a)
@@ -237,6 +259,12 @@ int main(int argc, char* argv[])
 
     if (!read_successful)
         return EXIT_FAILURE;
+
+    if (!args.quiet)
+        std::cout << "Comparing data array `" << args.data_array_a
+            << "' from file `" << args.vtk_input_a
+            << "' to data array `" << args.data_array_b
+            << "' from file `" << args.vtk_input_b << "'.\n";
 
     // Check similarity of the data arrays.
 
