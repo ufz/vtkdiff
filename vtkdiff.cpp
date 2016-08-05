@@ -168,8 +168,14 @@ readDataArraysFromFile(
         reader_a->GetOutput()->GetPointData()->GetScalars(
         data_array_a_name.c_str()) };
     vtkSmartPointer<vtkDataArray> b;
-    if(file_b_name.size() == 0)
+    if (file_b_name.empty())
     {
+        if (data_array_a_name == data_array_b_name) {
+            std::cerr << "Error: You are trying to compare data array `"
+                << data_array_a_name << "' from file `"
+                << file_a_name << "' to itself. Aborting.\n";
+            std::abort();
+        }
         b = vtkSmartPointer<vtkDataArray> {
             reader_a->GetOutput()->GetPointData()->GetScalars(
             data_array_b_name.c_str()) };
@@ -237,6 +243,12 @@ int main(int argc, char* argv[])
 
     if (!read_successful)
         return EXIT_FAILURE;
+
+    if (!args.quiet)
+        std::cout << "Comparing data array `" << args.data_array_a
+            << "' from file `" << args.vtk_input_a
+            << "' to data array `" << args.data_array_b
+            << "' from file `" << args.vtk_input_b << "'.\n";
 
     // Check similarity of the data arrays.
 
