@@ -142,7 +142,7 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
         { quiet_arg.getValue()
         , verbose_arg.getValue()
         , abs_err_thr_arg.getValue()
-        , abs_err_thr_arg.getValue()
+        , rel_err_thr_arg.getValue()
         , vtk_input_a_arg.getValue()
         , vtk_input_b_arg.getValue()
         , data_array_a_arg.getValue()
@@ -368,8 +368,8 @@ int main(int argc, char* argv[])
     if (abs_err_norm_max > args.abs_err_thr && rel_err_norm_max > args.rel_err_thr)
     {
         if (!args.quiet)
-            std::cout << "Absolute or relative error maximum is larger than "
-                "the corresponding threshold.\n";
+            std::cout << "Absolute and relative error (maximum norm) are larger"
+                         " than the corresponding thresholds.\n";
         return EXIT_FAILURE;
     }
 
