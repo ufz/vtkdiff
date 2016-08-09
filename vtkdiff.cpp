@@ -176,19 +176,18 @@ readDataArraysFromFile(
         std::string const& data_array_a_name,
         std::string const& data_array_b_name)
 {
-    // Read input file.
-    vtkSmartPointer<T> reader = vtkSmartPointer<T>::New();
-
     vtkSmartPointer<ErrorCallback<T>> errorCallback =
         vtkSmartPointer<ErrorCallback<T>>::New();
-    reader->AddObserver(vtkCommand::ErrorEvent, errorCallback);
 
-    reader->SetFileName(file_a_name.c_str());
-    reader->Update();
+    // Read input file.
+    vtkSmartPointer<T> reader_a = vtkSmartPointer<T>::New();
+    reader_a->AddObserver(vtkCommand::ErrorEvent, errorCallback);
+    reader_a->SetFileName(file_a_name.c_str());
+    reader_a->Update();
 
     // Get arrays
     auto a = vtkSmartPointer<vtkDataArray>{
-        reader->GetOutput()->GetPointData()->GetScalars(
+        reader_a->GetOutput()->GetPointData()->GetScalars(
             data_array_a_name.c_str())};
     vtkSmartPointer<vtkDataArray> b;
     if (file_b_name.empty()) {
@@ -199,13 +198,15 @@ readDataArraysFromFile(
             std::abort();
         }
         b = vtkSmartPointer<vtkDataArray>{
-            reader->GetOutput()->GetPointData()->GetScalars(
+            reader_a->GetOutput()->GetPointData()->GetScalars(
                 data_array_b_name.c_str())};
     } else {
-        reader->SetFileName(file_b_name.c_str());
-        reader->Update();
+        vtkSmartPointer<T> reader_b = vtkSmartPointer<T>::New();
+        reader_b->AddObserver(vtkCommand::ErrorEvent, errorCallback);
+        reader_b->SetFileName(file_b_name.c_str());
+        reader_b->Update();
         b = vtkSmartPointer<vtkDataArray>{
-            reader->GetOutput()->GetPointData()->GetScalars(
+            reader_b->GetOutput()->GetPointData()->GetScalars(
                 data_array_b_name.c_str())};
     }
 
