@@ -21,6 +21,7 @@
 #include <vtkDataArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
+#include <vtkCellData.h>
 #include <vtkSmartPointer.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridReader.h>
@@ -185,10 +186,41 @@ readDataArraysFromFile(
     reader_a->SetFileName(file_a_name.c_str());
     reader_a->Update();
 
+    bool point_data(false);
+    if (reader_a->GetOutput()->GetPointData()->HasArray(
+            data_array_a_name.c_str()))
+        point_data = true;
+    else if (reader_a->GetOutput()->GetCellData()->HasArray(
+                 data_array_a_name.c_str()))
+        point_data = false;
+    else
+    {
+        std::cerr << "Error: Scalars data array "
+            << "\'" << data_array_a_name.c_str() << "\'"
+            << " neither found in point data nor in cell data.\n";
+        return std::make_tuple(false, nullptr, nullptr);
+    }
+
     // Get arrays
-    auto a = vtkSmartPointer<vtkDataArray>{
-        reader_a->GetOutput()->GetPointData()->GetScalars(
-            data_array_a_name.c_str())};
+    vtkSmartPointer<vtkDataArray> a;
+    if (point_data)
+        a = vtkSmartPointer<vtkDataArray>{
+            reader_a->GetOutput()->GetPointData()->GetScalars(
+                data_array_a_name.c_str())};
+    else
+        a = vtkSmartPointer<vtkDataArray>{
+            reader_a->GetOutput()->GetCellData()->GetScalars(
+                data_array_a_name.c_str())};
+
+    // Check arrays' validity
+    if (!a)
+    {
+        std::cerr << "Error: Scalars data array "
+            << "\'" << data_array_a_name.c_str() << "\'"
+            << " could not be read.\n";
+        return std::make_tuple(false, nullptr, nullptr);
+    }
+
     vtkSmartPointer<vtkDataArray> b;
     if (file_b_name.empty()) {
         if (data_array_a_name == data_array_b_name) {
@@ -197,33 +229,34 @@ readDataArraysFromFile(
                       << "' to itself. Aborting.\n";
             std::abort();
         }
-        b = vtkSmartPointer<vtkDataArray>{
-            reader_a->GetOutput()->GetPointData()->GetScalars(
-                data_array_b_name.c_str())};
+        if (point_data)
+            b = vtkSmartPointer<vtkDataArray>{
+                reader_a->GetOutput()->GetPointData()->GetScalars(
+                    data_array_b_name.c_str())};
+        else
+            b = vtkSmartPointer<vtkDataArray>{
+                reader_a->GetOutput()->GetCellData()->GetScalars(
+                    data_array_b_name.c_str())};
     } else {
         vtkSmartPointer<T> reader_b = vtkSmartPointer<T>::New();
         reader_b->AddObserver(vtkCommand::ErrorEvent, errorCallback);
         reader_b->SetFileName(file_b_name.c_str());
         reader_b->Update();
-        b = vtkSmartPointer<vtkDataArray>{
-            reader_b->GetOutput()->GetPointData()->GetScalars(
-                data_array_b_name.c_str())};
-    }
-
-    // Check arrays' validity
-    if (!a)
-    {
-        std::cerr << "Error: Scalars data array "
-            << "\'" << data_array_a_name.c_str() << "\'"
-            << "not found in point data.\n";
-        return std::make_tuple(false, nullptr, nullptr);
+        if (point_data)
+            b = vtkSmartPointer<vtkDataArray>{
+                reader_b->GetOutput()->GetPointData()->GetScalars(
+                    data_array_b_name.c_str())};
+        else
+            b = vtkSmartPointer<vtkDataArray>{
+                reader_b->GetOutput()->GetCellData()->GetScalars(
+                    data_array_b_name.c_str())};
     }
 
     if (!b)
     {
         std::cerr << "Error: Scalars data array "
             << "\'" << data_array_b_name.c_str() << "\'"
-            << "not found in point data.\n";
+            << " not found.\n";
         return std::make_tuple(false, nullptr, nullptr);
     }
 
