@@ -9,17 +9,11 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/tclap/include)
 
 add_executable(vtkdiff vtkdiff.cpp)
 
-
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    if(VTK_LIBRARIES)
-        target_link_libraries(vtkdiff ${VTK_LIBRARIES})
-    else()
-        target_link_libraries(vtkdiff vtkHybrid vtkIOXML)
-    endif()
-else()
-    target_link_libraries(vtkdiff ${VTK_LIBRARIES})
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     ADD_VTK_DEPENDENCY(vtkdiff)
 endif()
+
+target_link_libraries(vtkdiff vtkIOXML)
 
 # Set compiler helper variables
 
