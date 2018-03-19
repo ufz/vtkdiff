@@ -47,6 +47,24 @@ bool stringEndsWith(std::string const& str, std::string const& ending)
     return str.compare(string_end_length, ending.length(), ending) == 0;
 }
 
+template <typename T>
+std::ostream& operator<<(std::ostream& os, std::vector<T> const& vector)
+{
+    if (vector.empty())
+    {
+        return os << "[]";
+    }
+
+    // print first n-1 elements
+    os << "[";
+    std::size_t const size = vector.size();
+    for (std::size_t i = 0; i < size - 1; ++i)
+    {
+        os << vector[i] << ", ";
+    }
+    return os << vector.back() << "]";
+}
+
 struct Args
 {
     bool const quiet;
@@ -330,14 +348,14 @@ int main(int argc, char* argv[])
     // Calculate difference of the data arrays.
 
     // Absolute error and norms.
-    double abs_err_norm_l1 = 0;
-    double abs_err_norm_2_2 = 0;
-    double abs_err_norm_max = 0;
+    std::vector<double> abs_err_norm_l1(num_components);
+    std::vector<double> abs_err_norm_2_2(num_components);
+    std::vector<double> abs_err_norm_max(num_components);
 
     // Relative error and norms.
-    double rel_err_norm_l1 = 0;
-    double rel_err_norm_2_2 = 0;
-    double rel_err_norm_max = 0;
+    std::vector<double> rel_err_norm_l1(num_components);
+    std::vector<double> rel_err_norm_2_2(num_components);
+    std::vector<double> rel_err_norm_max(num_components);
 
     for (auto tuple_idx = 0; tuple_idx < num_tuples; ++tuple_idx)
     {
@@ -348,9 +366,10 @@ int main(int argc, char* argv[])
             auto const b_comp = b->GetComponent(tuple_idx, component_idx);
             auto const abs_err = std::abs(a_comp - b_comp);
 
-            abs_err_norm_l1 += abs_err;
-            abs_err_norm_2_2 += abs_err * abs_err;
-            abs_err_norm_max = std::max(abs_err_norm_max, abs_err);
+            abs_err_norm_l1[component_idx] += abs_err;
+            abs_err_norm_2_2[component_idx] += abs_err * abs_err;
+            abs_err_norm_max[component_idx] =
+                std::max(abs_err_norm_max[component_idx], abs_err);
 
             // relative error and its norms:
             double rel_err;
@@ -369,14 +388,16 @@ int main(int argc, char* argv[])
                     abs_err / std::min(std::abs(a_comp), std::abs(b_comp));
             }
 
-            rel_err_norm_l1 += rel_err;
-            rel_err_norm_2_2 += rel_err * rel_err;
-            rel_err_norm_max = std::max(rel_err_norm_max, rel_err);
+            rel_err_norm_l1[component_idx] += rel_err;
+            rel_err_norm_2_2[component_idx] += rel_err * rel_err;
+            rel_err_norm_max[component_idx] =
+                std::max(rel_err_norm_max[component_idx], rel_err);
 
             if (abs_err > args.abs_err_thr && rel_err > args.rel_err_thr &&
                 args.verbose)
             {
-                std::cout << std::setw(4) << tuple_idx
+                std::cout << "tuple: " << std::setw(4) << tuple_idx
+                          << "component: " << std::setw(2) << component_idx
                           << ": abs err = " << std::setw(digits10 + 7)
                           << abs_err
                           << ", rel err = " << std::setw(digits10 + 7)
@@ -387,21 +408,38 @@ int main(int argc, char* argv[])
 
     // Error information
     if (!args.quiet)
-        std::cout << "Computed difference between data arrays:\n"
-                  << "abs l1 norm      = " << abs_err_norm_l1 << "\n"
-                  << "abs l2-norm^2    = " << abs_err_norm_2_2 << "\n"
-                  << "abs l2-norm      = " << std::sqrt(abs_err_norm_2_2)
-                  << "\n"
-                  << "abs maximum norm = " << abs_err_norm_max << "\n"
-                  << "\n"
-                  << "rel l1 norm      = " << rel_err_norm_l1 << "\n"
-                  << "rel l2-norm^2    = " << rel_err_norm_2_2 << "\n"
-                  << "rel l2-norm      = " << std::sqrt(rel_err_norm_2_2)
-                  << "\n"
-                  << "rel maximum norm = " << rel_err_norm_max << "\n";
+    {
+        std::cout << "Computed difference between data arrays:\n";
+        std::cout << "abs l1 norm      = " << abs_err_norm_l1 << "\n";
+        std::cout << "abs l2-norm^2    = " << abs_err_norm_2_2 << "\n";
 
-    if (abs_err_norm_max > args.abs_err_thr &&
-        rel_err_norm_max > args.rel_err_thr)
+        // temporary squared norm vector for output.
+        std::vector<double> abs_err_norm_2;
+        std::transform(std::begin(abs_err_norm_2_2), std::end(abs_err_norm_2_2),
+                       std::back_inserter(abs_err_norm_2),
+                       [](double x) { return std::sqrt(x); });
+        std::cout << "abs l2-norm      = " << abs_err_norm_2 << "\n";
+
+        std::cout << "abs maximum norm = " << abs_err_norm_max << "\n";
+        std::cout << "\n";
+
+        std::cout << "rel l1 norm      = " << rel_err_norm_l1 << "\n";
+        std::cout << "rel l2-norm^2    = " << rel_err_norm_2_2 << "\n";
+
+        // temporary squared norm vector for output.
+        std::vector<double> rel_err_norm_2;
+        std::transform(std::begin(rel_err_norm_2_2), std::end(rel_err_norm_2_2),
+                       std::back_inserter(rel_err_norm_2),
+                       [](double x) { return std::sqrt(x); });
+        std::cout << "rel l2-norm      = " << rel_err_norm_2_2 << "\n";
+
+        std::cout << "rel maximum norm = " << rel_err_norm_max << "\n";
+    }
+
+    if (*std::max_element(abs_err_norm_max.begin(), abs_err_norm_max.end()) >
+            args.abs_err_thr &&
+        *std::max_element(rel_err_norm_max.begin(), rel_err_norm_max.end()) >
+            args.rel_err_thr)
     {
         if (!args.quiet)
             std::cout << "Absolute and relative error (maximum norm) are larger"
