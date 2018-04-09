@@ -176,7 +176,8 @@ public:
 };
 
 template <typename T>
-std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
+std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>,
+           vtkSmartPointer<vtkUnstructuredGrid>>
 readDataArraysFromFile(std::string const& file_a_name,
                        std::string const& file_b_name,
                        std::string const& data_array_a_name,
@@ -191,6 +192,8 @@ readDataArraysFromFile(std::string const& file_a_name,
     reader_a->SetFileName(file_a_name.c_str());
     reader_a->Update();
 
+    vtkSmartPointer<vtkUnstructuredGrid> grid_a = reader_a->GetOutput();
+
     bool point_data(false);
     if (reader_a->GetOutput()->GetPointData()->HasArray(
             data_array_a_name.c_str()))
@@ -203,7 +206,7 @@ readDataArraysFromFile(std::string const& file_a_name,
         std::cerr << "Error: Scalars data array "
                   << "\'" << data_array_a_name.c_str() << "\'"
                   << " neither found in point data nor in cell data.\n";
-        return std::make_tuple(false, nullptr, nullptr);
+        return std::make_tuple(false, nullptr, nullptr, nullptr);
     }
 
     // Get arrays
@@ -223,7 +226,7 @@ readDataArraysFromFile(std::string const& file_a_name,
         std::cerr << "Error: Scalars data array "
                   << "\'" << data_array_a_name.c_str() << "\'"
                   << " could not be read.\n";
-        return std::make_tuple(false, nullptr, nullptr);
+        return std::make_tuple(false, nullptr, nullptr, nullptr);
     }
 
     vtkSmartPointer<vtkDataArray> b;
@@ -266,10 +269,10 @@ readDataArraysFromFile(std::string const& file_a_name,
         std::cerr << "Error: Scalars data array "
                   << "\'" << data_array_b_name.c_str() << "\'"
                   << " not found.\n";
-        return std::make_tuple(false, nullptr, nullptr);
+        return std::make_tuple(false, nullptr, nullptr, nullptr);
     }
 
-    return std::make_tuple(true, a, b);
+    return std::make_tuple(true, a, b, grid_a);
 }
 
 int main(int argc, char* argv[])
@@ -285,9 +288,10 @@ int main(int argc, char* argv[])
     bool read_successful;
     vtkSmartPointer<vtkDataArray> a;
     vtkSmartPointer<vtkDataArray> b;
+    vtkSmartPointer<vtkUnstructuredGrid> grid;
 
     if (stringEndsWith(args.vtk_input_a, ".vtu"))
-        std::tie(read_successful, a, b) =
+        std::tie(read_successful, a, b, grid) =
             readDataArraysFromFile<vtkXMLUnstructuredGridReader>(
                 args.vtk_input_a,
                 args.vtk_input_b,
