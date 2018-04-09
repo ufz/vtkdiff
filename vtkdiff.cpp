@@ -350,7 +350,16 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    //
     // Calculate difference of the data arrays.
+    //
+
+    vtkSmartPointer<vtkDoubleArray> difference =
+        vtkSmartPointer<vtkDoubleArray>::New();
+    difference->SetName((std::string(a->GetName()) + "_difference").c_str());
+    difference->SetNumberOfComponents(num_components);
+    difference->SetNumberOfTuples(num_tuples);
+    difference->SetNumberOfValues(num_tuples * num_components);
 
     // Absolute error and norms.
     std::vector<double> abs_err_norm_l1(num_components);
@@ -370,6 +379,7 @@ int main(int argc, char* argv[])
             auto const a_comp = a->GetComponent(tuple_idx, component_idx);
             auto const b_comp = b->GetComponent(tuple_idx, component_idx);
             auto const abs_err = std::abs(a_comp - b_comp);
+            difference->SetComponent(tuple_idx, component_idx, a_comp - b_comp);
 
             abs_err_norm_l1[component_idx] += abs_err;
             abs_err_norm_2_2[component_idx] += abs_err * abs_err;
