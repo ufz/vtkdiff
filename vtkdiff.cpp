@@ -26,6 +26,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridReader.h>
+#include <vtkXMLUnstructuredGridWriter.h>
 
 template <typename T>
 auto float_to_string(T const& v) -> std::string
@@ -418,6 +419,36 @@ int main(int argc, char* argv[])
                           << ", rel err = " << std::setw(digits10 + 7)
                           << rel_err << "\n";
             }
+        }
+    }
+
+    // Write difference output
+    {
+        bool const isCellData = grid->GetNumberOfCells() == num_tuples;
+        bool const isPointData = grid->GetNumberOfPoints() == num_tuples;
+        if (isCellData)
+        {
+            grid->GetCellData()->AddArray(difference);
+        }
+        else if (isPointData)
+        {
+            grid->GetPointData()->AddArray(difference);
+        }
+        else
+        {
+            std::cout << "Not writing any difference output because data is "
+                         "neither cell nor point data.\n";
+            return EXIT_FAILURE;
+        }
+
+        vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
+            vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+        writer->SetFileName("diff.vtu");
+        writer->SetInputData(grid);
+        if (writer->Write() == 0)
+        {
+            std::cout << "Error writing.\n";
+            return EXIT_FAILURE;
         }
     }
 
