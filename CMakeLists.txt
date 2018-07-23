@@ -24,24 +24,20 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
 endif() # CMAKE_CXX_COMPILER_ID
 
 if(COMPILER_IS_GCC OR COMPILER_IS_CLANG)
-    set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wextra")
+    target_compile_options(vtkdiff PUBLIC -std=c++11 -Wall -Wextra)
 endif()
 
 if(COMPILER_IS_INTEL)
-    set(CMAKE_CXX_FLAGS "-std=c++11 -xHOST -no-prec-div")
+    target_compile_options(vtkdiff PUBLIC -std=c++11 -xHOST -no-prec-div)
 endif()
 
 if (COMPILER_IS_MSVC)
-    add_definitions(
-        -D_CRT_SECURE_NO_WARNINGS
-        -D_CRT_NONSTDC_NO_WARNINGS
-        -D_CRT_XNONSTDC_NO_WARNINGS
-        -D__restrict__=__restrict   # this fixes #5
-        -DNOMINMAX # This fixes compile errors with std::numeric_limits<T>::min() / max()
+    target_compile_options(vtkdiff PUBLIC
+        _CRT_SECURE_NO_WARNINGS
+        _CRT_NONSTDC_NO_WARNINGS
+        _CRT_XNONSTDC_NO_WARNINGS
+        __restrict__=__restrict   # this fixes #5
+        NOMINMAX # This fixes compile errors with std::numeric_limits<T>::min() / max()
+        /W3 /wd4290 /wd4267 /wd4996
     )
-    # Sets warning level 3 and ignores some warnings
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /wd4290 /wd4267 /wd4996")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /ZI /Od /Ob0")
-
-    DisableCompilerFlag(DEBUG /RTC1)
 endif ()
