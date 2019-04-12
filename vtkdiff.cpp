@@ -286,13 +286,16 @@ int main(int argc, char* argv[])
     vtkSmartPointer<vtkDataArray> a;
     vtkSmartPointer<vtkDataArray> b;
 
-    if (stringEndsWith(args.vtk_input_a, ".vtu"))
+    if (stringEndsWith(args.vtk_input_a, ".vtu") ||
+        !args.vtk_input_b.empty() && stringEndsWith(args.vtk_input_b, ".vtu"))
+    {
         std::tie(read_successful, a, b) =
             readDataArraysFromFile<vtkXMLUnstructuredGridReader>(
                 args.vtk_input_a,
                 args.vtk_input_b,
                 args.data_array_a,
                 args.data_array_b);
+    }
     else
     {
         std::cerr << "Invalid file type! "
