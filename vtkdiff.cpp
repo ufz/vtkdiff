@@ -70,6 +70,7 @@ struct Args
 {
     bool const quiet;
     bool const verbose;
+    bool const meshcheck;
     double const abs_err_thr;
     double const rel_err_thr;
     std::string const vtk_input_a;
@@ -108,16 +109,19 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
 
     TCLAP::ValueArg<std::string> data_array_a_arg(
         "a", "first_data_array", "First data array name for comparison", true, "", "NAME");
-    cmd.add(data_array_a_arg);
 
     TCLAP::ValueArg<std::string> data_array_b_arg(
         "b",
         "second_data_array",
         "Second data array name for comparison",
-        true,
+        false,
         "",
         "NAME");
     cmd.add(data_array_b_arg);
+
+    TCLAP::SwitchArg meshcheck_arg(
+        "m", "mesh_check", "Compare mesh geometries using absolute tolerance.");
+    cmd.xorAdd(data_array_a_arg, meshcheck_arg);
 
     TCLAP::SwitchArg quiet_arg("q", "quiet", "Suppress all but error output.");
     cmd.add(quiet_arg);
@@ -151,10 +155,11 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
 
     cmd.parse(argc, argv);
 
-    return Args{quiet_arg.getValue(),        verbose_arg.getValue(),
-                abs_err_thr_arg.getValue(),  rel_err_thr_arg.getValue(),
-                vtk_input_a_arg.getValue(),  vtk_input_b_arg.getValue(),
-                data_array_a_arg.getValue(), data_array_b_arg.getValue()};
+    return Args{quiet_arg.getValue(),       verbose_arg.getValue(),
+                meshcheck_arg.getValue(),   abs_err_thr_arg.getValue(),
+                rel_err_thr_arg.getValue(), vtk_input_a_arg.getValue(),
+                vtk_input_b_arg.getValue(), data_array_a_arg.getValue(),
+                data_array_b_arg.getValue()};
 }
 
 template <typename T>
