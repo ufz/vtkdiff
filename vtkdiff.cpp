@@ -175,6 +175,39 @@ public:
     }
 };
 
+vtkSmartPointer<vtkUnstructuredGrid>
+readMesh(std::string const& filename)
+{
+    if (filename.empty())
+    {
+        return nullptr;
+    }
+
+    if (!stringEndsWith(filename, ".vtu"))
+    {
+        std::cerr << "Error: Expected a file with .vtu extension."
+                  << "File '" << filename << "' not read.";
+        return nullptr;
+    }
+
+    vtkSmartPointer<ErrorCallback<vtkXMLUnstructuredGridReader>> errorCallback =
+        vtkSmartPointer<ErrorCallback<vtkXMLUnstructuredGridReader>>::New();
+
+    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader =
+        vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+    reader->AddObserver(vtkCommand::ErrorEvent, errorCallback);
+    reader->SetFileName(filename.c_str());
+    reader->Update();
+    return reader->GetOutput();
+}
+
+std::tuple<vtkSmartPointer<vtkUnstructuredGrid>,
+           vtkSmartPointer<vtkUnstructuredGrid>>
+readMeshes(std::string const& file_a_name, std::string const& file_b_name)
+{
+    return {readMesh(file_a_name), readMesh(file_b_name)};
+}
+
 template <typename T>
 std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
 readDataArraysFromFile(std::string const& file_a_name,
@@ -281,27 +314,18 @@ int main(int argc, char* argv[])
     std::cout << std::scientific << std::setprecision(digits10);
     std::cerr << std::scientific << std::setprecision(digits10);
 
+    auto meshes = readMeshes(args.vtk_input_a, args.vtk_input_b);
+
     // Read arrays from input file.
     bool read_successful;
     vtkSmartPointer<vtkDataArray> a;
     vtkSmartPointer<vtkDataArray> b;
 
-    if (stringEndsWith(args.vtk_input_a, ".vtu") ||
-        !args.vtk_input_b.empty() && stringEndsWith(args.vtk_input_b, ".vtu"))
-    {
-        std::tie(read_successful, a, b) =
-            readDataArraysFromFile<vtkXMLUnstructuredGridReader>(
-                args.vtk_input_a,
-                args.vtk_input_b,
-                args.data_array_a,
-                args.data_array_b);
-    }
-    else
-    {
-        std::cerr << "Invalid file type! "
-                     "Only .vtu files are supported.\n";
-        return EXIT_FAILURE;
-    }
+    std::tie(read_successful, a, b) =
+        readDataArraysFromFile<vtkXMLUnstructuredGridReader>(args.vtk_input_a,
+                                                             args.vtk_input_b,
+                                                             args.data_array_a,
+                                                             args.data_array_b);
 
     if (!read_successful)
         return EXIT_FAILURE;
