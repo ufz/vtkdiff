@@ -23,12 +23,16 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
     set(COMPILER_IS_MSVC TRUE)
 endif() # CMAKE_CXX_COMPILER_ID
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 if(COMPILER_IS_GCC OR COMPILER_IS_CLANG)
-    target_compile_options(vtkdiff PUBLIC -std=c++11 -Wall -Wextra)
+    target_compile_options(vtkdiff PUBLIC -Wall -Wextra)
 endif()
 
 if(COMPILER_IS_INTEL)
-    target_compile_options(vtkdiff PUBLIC -std=c++11 -xHOST -no-prec-div)
+    target_compile_options(vtkdiff PUBLIC -xHOST -no-prec-div)
 endif()
 
 if (COMPILER_IS_MSVC)
