@@ -107,12 +107,12 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
     cmd.add(vtk_input_b_arg);
 
     TCLAP::ValueArg<std::string> data_array_a_arg(
-        "a", "first", "First data array name for comparison", true, "", "NAME");
+        "a", "first_data_array", "First data array name for comparison", true, "", "NAME");
     cmd.add(data_array_a_arg);
 
     TCLAP::ValueArg<std::string> data_array_b_arg(
         "b",
-        "second",
+        "second_data_array",
         "Second data array name for comparison",
         true,
         "",
