@@ -208,29 +208,30 @@ readMeshes(std::string const& file_a_name, std::string const& file_b_name)
     return {readMesh(file_a_name), readMesh(file_b_name)};
 }
 
-template <typename T>
 std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
-readDataArraysFromFile(std::string const& file_a_name,
-                       std::string const& file_b_name,
-                       std::string const& data_array_a_name,
-                       std::string const& data_array_b_name)
+readDataArraysFromMeshes(
+    std::tuple<vtkSmartPointer<vtkUnstructuredGrid>,
+               vtkSmartPointer<vtkUnstructuredGrid>> const& meshes,
+    std::string const& data_array_a_name,
+    std::string const& data_array_b_name)
 {
-    vtkSmartPointer<ErrorCallback<T>> errorCallback =
-        vtkSmartPointer<ErrorCallback<T>>::New();
-
-    // Read input file.
-    vtkSmartPointer<T> reader_a = vtkSmartPointer<T>::New();
-    reader_a->AddObserver(vtkCommand::ErrorEvent, errorCallback);
-    reader_a->SetFileName(file_a_name.c_str());
-    reader_a->Update();
+    if (std::get<0>(meshes) == nullptr)
+    {
+        std::cerr << "First mesh was not read correctly and is a nullptr.\n";
+        return {false, nullptr, nullptr};
+    }
 
     bool point_data(false);
-    if (reader_a->GetOutput()->GetPointData()->HasArray(
+    if (std::get<0>(meshes)->GetPointData()->HasArray(
             data_array_a_name.c_str()))
+    {
         point_data = true;
-    else if (reader_a->GetOutput()->GetCellData()->HasArray(
+    }
+    else if (std::get<0>(meshes)->GetCellData()->HasArray(
                  data_array_a_name.c_str()))
+    {
         point_data = false;
+    }
     else
     {
         std::cerr << "Error: Scalars data array "
@@ -242,13 +243,17 @@ readDataArraysFromFile(std::string const& file_a_name,
     // Get arrays
     vtkSmartPointer<vtkDataArray> a;
     if (point_data)
+    {
         a = vtkSmartPointer<vtkDataArray>{
-            reader_a->GetOutput()->GetPointData()->GetScalars(
+            std::get<0>(meshes)->GetPointData()->GetScalars(
                 data_array_a_name.c_str())};
+    }
     else
+    {
         a = vtkSmartPointer<vtkDataArray>{
-            reader_a->GetOutput()->GetCellData()->GetScalars(
+            std::get<0>(meshes)->GetCellData()->GetScalars(
                 data_array_a_name.c_str())};
+    }
 
     // Check arrays' validity
     if (!a)
@@ -260,38 +265,42 @@ readDataArraysFromFile(std::string const& file_a_name,
     }
 
     vtkSmartPointer<vtkDataArray> b;
-    if (file_b_name.empty())
+    if (std::get<1>(meshes) == nullptr)
     {
         if (data_array_a_name == data_array_b_name)
         {
             std::cerr << "Error: You are trying to compare data array `"
-                      << data_array_a_name << "' from file `" << file_a_name
-                      << "' to itself. Aborting.\n";
-            std::abort();
+                      << data_array_a_name
+                      << "' from first file to itself. Aborting.\n";
+            std::exit(3);
         }
         if (point_data)
+        {
             b = vtkSmartPointer<vtkDataArray>{
-                reader_a->GetOutput()->GetPointData()->GetScalars(
+                std::get<0>(meshes)->GetPointData()->GetScalars(
                     data_array_b_name.c_str())};
+        }
         else
+        {
             b = vtkSmartPointer<vtkDataArray>{
-                reader_a->GetOutput()->GetCellData()->GetScalars(
+                std::get<0>(meshes)->GetCellData()->GetScalars(
                     data_array_b_name.c_str())};
+        }
     }
     else
     {
-        vtkSmartPointer<T> reader_b = vtkSmartPointer<T>::New();
-        reader_b->AddObserver(vtkCommand::ErrorEvent, errorCallback);
-        reader_b->SetFileName(file_b_name.c_str());
-        reader_b->Update();
         if (point_data)
+        {
             b = vtkSmartPointer<vtkDataArray>{
-                reader_b->GetOutput()->GetPointData()->GetScalars(
+                std::get<1>(meshes)->GetPointData()->GetScalars(
                     data_array_b_name.c_str())};
+        }
         else
+        {
             b = vtkSmartPointer<vtkDataArray>{
-                reader_b->GetOutput()->GetCellData()->GetScalars(
+                std::get<1>(meshes)->GetCellData()->GetScalars(
                     data_array_b_name.c_str())};
+        }
     }
 
     if (!b)
@@ -322,10 +331,7 @@ int main(int argc, char* argv[])
     vtkSmartPointer<vtkDataArray> b;
 
     std::tie(read_successful, a, b) =
-        readDataArraysFromFile<vtkXMLUnstructuredGridReader>(args.vtk_input_a,
-                                                             args.vtk_input_b,
-                                                             args.data_array_a,
-                                                             args.data_array_b);
+        readDataArraysFromMeshes(meshes, args.data_array_a, args.data_array_b);
 
     if (!read_successful)
         return EXIT_FAILURE;
