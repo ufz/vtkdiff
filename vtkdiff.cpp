@@ -330,6 +330,16 @@ int main(int argc, char* argv[])
 
     auto meshes = readMeshes(args.vtk_input_a, args.vtk_input_b);
 
+    if (args.meshcheck)
+    {
+        if (args.vtk_input_a == args.vtk_input_b)
+        {
+            std::cout << "Will not compare meshes from same input file.\n";
+            return EXIT_SUCCESS;
+        }
+        return EXIT_FAILURE;
+    }
+
     // Read arrays from input file.
     bool read_successful;
     vtkSmartPointer<vtkDataArray> a;
