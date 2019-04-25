@@ -319,6 +319,42 @@ readDataArraysFromMeshes(
     return std::make_tuple(true, a, b);
 }
 
+bool comparePoints(vtkPoints* const points_a, vtkPoints* const points_b,
+                   double const eps_squared)
+{
+    vtkIdType const n_points_a{points_a->GetNumberOfPoints()};
+    vtkIdType const n_points_b{points_b->GetNumberOfPoints()};
+
+    if (n_points_a != n_points_b)
+    {
+        std::cerr << "Number of points in the first mesh is " << n_points_a
+                  << " and differst from the number of point in the second "
+                     "mesh, which is "
+                  << n_points_b << "\n";
+        return false;
+    }
+
+    for (vtkIdType p = 0; p < n_points_a; ++p)
+    {
+        auto const a = points_a->GetPoint(p);
+        auto const b = points_b->GetPoint(p);
+        double const distance2 = vtkMath::Distance2BetweenPoints(a, b);
+        if (distance2 >= eps_squared)
+        {
+            std::cerr << "Point " << p << " with coordinates (" << a[0] << ", "
+                      << a[1] << ", " << a[2]
+                      << ") from the first mesh is significantly different "
+                         "from the same point in the second mesh, which "
+                         "has coordinates ("
+                      << b[0] << ", " << b[1] << ", " << b[2]
+                      << ") with distance between them " << std::sqrt(distance2)
+                      << "\n";
+            return false;
+        }
+    }
+    return true;
+}
+
 int main(int argc, char* argv[])
 {
     auto const digits10 = std::numeric_limits<double>::digits10;
@@ -337,7 +373,15 @@ int main(int argc, char* argv[])
             std::cout << "Will not compare meshes from same input file.\n";
             return EXIT_SUCCESS;
         }
-        return EXIT_FAILURE;
+        if (!comparePoints(std::get<0>(meshes)->GetPoints(),
+                           std::get<1>(meshes)->GetPoints(),
+                           args.abs_err_thr * args.abs_err_thr))
+        {
+            std::cerr << "Error in mesh points' comparison occured.\n";
+            return EXIT_FAILURE;
+        }
+
+        return EXIT_SUCCESS;
     }
 
     // Read arrays from input file.
