@@ -166,12 +166,12 @@ public:
     static ErrorCallback<T>* New() { return new ErrorCallback<T>; }
 
     void Execute(vtkObject* caller, unsigned long vtkNotUsed(eventId),
-                 void* vtkNotUsed(callData)) override
+                 void* callData) override
     {
         auto* reader = static_cast<T*>(caller);
-        std::cerr << "Error reading file `" << reader->GetFileName()
-                  << "'. Aborting." << std::endl;
-        std::abort();
+        std::cerr << "Error reading file `" << reader->GetFileName() << "'\n"
+                  << static_cast<char*>(callData) << "\nAborting." << std::endl;
+        std::exit(2);
     }
 };
 
