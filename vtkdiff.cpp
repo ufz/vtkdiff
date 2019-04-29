@@ -18,6 +18,7 @@
 
 #include <tclap/CmdLine.h>
 
+#include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkCommand.h>
 #include <vtkDataArray.h>
@@ -319,6 +320,72 @@ readDataArraysFromMeshes(
     return std::make_tuple(true, a, b);
 }
 
+bool compareCellTopology(vtkCellArray* const cells_a,
+                         vtkCellArray* const cells_b)
+{
+    vtkIdType const n_cells_a{cells_a->GetNumberOfCells()};
+    vtkIdType const n_cells_b{cells_b->GetNumberOfCells()};
+
+    if (n_cells_a != n_cells_b)
+    {
+        std::cerr << "Number of cells in the first mesh is " << n_cells_a
+                  << " and differs from the number of cells in the second "
+                     "mesh, which is "
+                  << n_cells_b << "\n";
+        return false;
+    }
+
+    vtkIdType n_cell_points_a, n_cell_points_b;
+    vtkIdType *cell_points_a, *cell_points_b;
+    cells_a->InitTraversal();
+    cells_b->InitTraversal();
+    int get_next_cell_a = cells_a->GetNextCell(n_cell_points_a, cell_points_a);
+    int get_next_cell_b = cells_b->GetNextCell(n_cell_points_b, cell_points_b);
+    int cell_number = 0;
+    while (get_next_cell_a == 1 && get_next_cell_b == 1)
+    {
+        if (n_cell_points_a != n_cell_points_b)
+        {
+            std::cerr << "Cell " << cell_number << " in first input has "
+                      << n_cell_points_a << " points but in the second input "
+                      << n_cell_points_b << " points.\n";
+        }
+
+        for (vtkIdType i = 0; i < n_cell_points_a; ++i)
+        {
+            if (cell_points_a[i] != cell_points_b[i])
+            {
+                std::cerr << "Point " << i << " of cell " << cell_number
+                          << " has id " << cell_points_a[i]
+                          << " in the first input but id " << cell_points_b[i]
+                          << " in the second input.\n";
+                return false;
+            }
+        }
+
+        get_next_cell_a = cells_a->GetNextCell(n_cell_points_a, cell_points_a);
+        get_next_cell_b = cells_b->GetNextCell(n_cell_points_b, cell_points_b);
+        cell_number++;
+    }
+
+    if (get_next_cell_a != 0)
+    {
+        std::cerr << "Unexpected return value (" << get_next_cell_a
+                  << ") for cells_a->GetNextCell() call. Expected 0 for "
+                     "end-of-list or 1 for no error.\n";
+        return false;
+    }
+    if (get_next_cell_b != 0)
+    {
+        std::cerr << "Unexpected return value (" << get_next_cell_b
+                  << ") for cells_b->GetNextCell() call. Expected 0 for "
+                     "end-of-list or 1 for no error.\n";
+        return false;
+    }
+
+    return true;
+}
+
 bool comparePoints(vtkPoints* const points_a, vtkPoints* const points_b,
                    double const eps_squared)
 {
@@ -381,6 +448,12 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
+        if (!compareCellTopology(std::get<0>(meshes)->GetCells(),
+                                 std::get<1>(meshes)->GetCells()))
+        {
+            std::cerr << "Error in cells' topology comparison occured.\n";
+            return EXIT_FAILURE;
+        }
         return EXIT_SUCCESS;
     }
 
