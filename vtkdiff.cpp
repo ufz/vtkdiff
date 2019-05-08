@@ -18,6 +18,7 @@
 
 #include <tclap/CmdLine.h>
 
+#include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkCommand.h>
 #include <vtkDataArray.h>
@@ -70,6 +71,7 @@ struct Args
 {
     bool const quiet;
     bool const verbose;
+    bool const meshcheck;
     double const abs_err_thr;
     double const rel_err_thr;
     std::string const vtk_input_a;
@@ -108,16 +110,19 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
 
     TCLAP::ValueArg<std::string> data_array_a_arg(
         "a", "first_data_array", "First data array name for comparison", true, "", "NAME");
-    cmd.add(data_array_a_arg);
 
     TCLAP::ValueArg<std::string> data_array_b_arg(
         "b",
         "second_data_array",
         "Second data array name for comparison",
-        true,
+        false,
         "",
         "NAME");
     cmd.add(data_array_b_arg);
+
+    TCLAP::SwitchArg meshcheck_arg(
+        "m", "mesh_check", "Compare mesh geometries using absolute tolerance.");
+    cmd.xorAdd(data_array_a_arg, meshcheck_arg);
 
     TCLAP::SwitchArg quiet_arg("q", "quiet", "Suppress all but error output.");
     cmd.add(quiet_arg);
@@ -151,10 +156,11 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
 
     cmd.parse(argc, argv);
 
-    return Args{quiet_arg.getValue(),        verbose_arg.getValue(),
-                abs_err_thr_arg.getValue(),  rel_err_thr_arg.getValue(),
-                vtk_input_a_arg.getValue(),  vtk_input_b_arg.getValue(),
-                data_array_a_arg.getValue(), data_array_b_arg.getValue()};
+    return Args{quiet_arg.getValue(),       verbose_arg.getValue(),
+                meshcheck_arg.getValue(),   abs_err_thr_arg.getValue(),
+                rel_err_thr_arg.getValue(), vtk_input_a_arg.getValue(),
+                vtk_input_b_arg.getValue(), data_array_a_arg.getValue(),
+                data_array_b_arg.getValue()};
 }
 
 template <typename T>
@@ -314,6 +320,108 @@ readDataArraysFromMeshes(
     return std::make_tuple(true, a, b);
 }
 
+bool compareCellTopology(vtkCellArray* const cells_a,
+                         vtkCellArray* const cells_b)
+{
+    vtkIdType const n_cells_a{cells_a->GetNumberOfCells()};
+    vtkIdType const n_cells_b{cells_b->GetNumberOfCells()};
+
+    if (n_cells_a != n_cells_b)
+    {
+        std::cerr << "Number of cells in the first mesh is " << n_cells_a
+                  << " and differs from the number of cells in the second "
+                     "mesh, which is "
+                  << n_cells_b << "\n";
+        return false;
+    }
+
+    vtkIdType n_cell_points_a, n_cell_points_b;
+    vtkIdType *cell_points_a, *cell_points_b;
+    cells_a->InitTraversal();
+    cells_b->InitTraversal();
+    int get_next_cell_a = cells_a->GetNextCell(n_cell_points_a, cell_points_a);
+    int get_next_cell_b = cells_b->GetNextCell(n_cell_points_b, cell_points_b);
+    int cell_number = 0;
+    while (get_next_cell_a == 1 && get_next_cell_b == 1)
+    {
+        if (n_cell_points_a != n_cell_points_b)
+        {
+            std::cerr << "Cell " << cell_number << " in first input has "
+                      << n_cell_points_a << " points but in the second input "
+                      << n_cell_points_b << " points.\n";
+        }
+
+        for (vtkIdType i = 0; i < n_cell_points_a; ++i)
+        {
+            if (cell_points_a[i] != cell_points_b[i])
+            {
+                std::cerr << "Point " << i << " of cell " << cell_number
+                          << " has id " << cell_points_a[i]
+                          << " in the first input but id " << cell_points_b[i]
+                          << " in the second input.\n";
+                return false;
+            }
+        }
+
+        get_next_cell_a = cells_a->GetNextCell(n_cell_points_a, cell_points_a);
+        get_next_cell_b = cells_b->GetNextCell(n_cell_points_b, cell_points_b);
+        cell_number++;
+    }
+
+    if (get_next_cell_a != 0)
+    {
+        std::cerr << "Unexpected return value (" << get_next_cell_a
+                  << ") for cells_a->GetNextCell() call. Expected 0 for "
+                     "end-of-list or 1 for no error.\n";
+        return false;
+    }
+    if (get_next_cell_b != 0)
+    {
+        std::cerr << "Unexpected return value (" << get_next_cell_b
+                  << ") for cells_b->GetNextCell() call. Expected 0 for "
+                     "end-of-list or 1 for no error.\n";
+        return false;
+    }
+
+    return true;
+}
+
+bool comparePoints(vtkPoints* const points_a, vtkPoints* const points_b,
+                   double const eps_squared)
+{
+    vtkIdType const n_points_a{points_a->GetNumberOfPoints()};
+    vtkIdType const n_points_b{points_b->GetNumberOfPoints()};
+
+    if (n_points_a != n_points_b)
+    {
+        std::cerr << "Number of points in the first mesh is " << n_points_a
+                  << " and differst from the number of point in the second "
+                     "mesh, which is "
+                  << n_points_b << "\n";
+        return false;
+    }
+
+    for (vtkIdType p = 0; p < n_points_a; ++p)
+    {
+        auto const a = points_a->GetPoint(p);
+        auto const b = points_b->GetPoint(p);
+        double const distance2 = vtkMath::Distance2BetweenPoints(a, b);
+        if (distance2 >= eps_squared)
+        {
+            std::cerr << "Point " << p << " with coordinates (" << a[0] << ", "
+                      << a[1] << ", " << a[2]
+                      << ") from the first mesh is significantly different "
+                         "from the same point in the second mesh, which "
+                         "has coordinates ("
+                      << b[0] << ", " << b[1] << ", " << b[2]
+                      << ") with distance between them " << std::sqrt(distance2)
+                      << "\n";
+            return false;
+        }
+    }
+    return true;
+}
+
 int main(int argc, char* argv[])
 {
     auto const digits10 = std::numeric_limits<double>::digits10;
@@ -324,6 +432,30 @@ int main(int argc, char* argv[])
     std::cerr << std::scientific << std::setprecision(digits10);
 
     auto meshes = readMeshes(args.vtk_input_a, args.vtk_input_b);
+
+    if (args.meshcheck)
+    {
+        if (args.vtk_input_a == args.vtk_input_b)
+        {
+            std::cout << "Will not compare meshes from same input file.\n";
+            return EXIT_SUCCESS;
+        }
+        if (!comparePoints(std::get<0>(meshes)->GetPoints(),
+                           std::get<1>(meshes)->GetPoints(),
+                           args.abs_err_thr * args.abs_err_thr))
+        {
+            std::cerr << "Error in mesh points' comparison occured.\n";
+            return EXIT_FAILURE;
+        }
+
+        if (!compareCellTopology(std::get<0>(meshes)->GetCells(),
+                                 std::get<1>(meshes)->GetCells()))
+        {
+            std::cerr << "Error in cells' topology comparison occured.\n";
+            return EXIT_FAILURE;
+        }
+        return EXIT_SUCCESS;
+    }
 
     // Read arrays from input file.
     bool read_successful;
