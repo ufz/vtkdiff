@@ -109,7 +109,8 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
     cmd.add(vtk_input_b_arg);
 
     TCLAP::ValueArg<std::string> data_array_a_arg(
-        "a", "first_data_array", "First data array name for comparison", true, "", "NAME");
+        "a", "first_data_array", "First data array name for comparison", true,
+        "", "NAME");
 
     TCLAP::ValueArg<std::string> data_array_b_arg(
         "b",
@@ -181,8 +182,7 @@ public:
     }
 };
 
-vtkSmartPointer<vtkUnstructuredGrid>
-readMesh(std::string const& filename)
+vtkSmartPointer<vtkUnstructuredGrid> readMesh(std::string const& filename)
 {
     if (filename.empty())
     {
