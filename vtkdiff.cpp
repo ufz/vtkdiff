@@ -609,7 +609,9 @@ int main(int argc, char* argv[])
     {
         if (!args.quiet)
             std::cout << "Absolute and relative error (maximum norm) are larger"
-                         " than the corresponding thresholds.\n";
+                         " than the corresponding thresholds "
+                      << args.abs_err_thr << " and " << args.rel_err_thr
+                      << ".\n";
         return EXIT_FAILURE;
     }
 
