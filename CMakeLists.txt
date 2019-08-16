@@ -9,7 +9,7 @@ include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/tclap/include)
 
 add_executable(vtkdiff vtkdiff.cpp)
 
-target_link_libraries(vtkdiff vtkIOXML)
+target_link_libraries(vtkdiff ${VTK_LIBRARIES})
 
 # Set compiler helper variables
 
