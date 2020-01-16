@@ -26,6 +26,7 @@
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkVersion.h>
 #include <vtkXMLUnstructuredGridReader.h>
 
 template <typename T>
@@ -336,7 +337,11 @@ bool compareCellTopology(vtkCellArray* const cells_a,
     }
 
     vtkIdType n_cell_points_a, n_cell_points_b;
-    vtkIdType *cell_points_a, *cell_points_b;
+    #if (VTK_MAJOR_VERSION > 8 || VTK_MINOR_VERSION == 90)
+        const vtkIdType *cell_points_a, *cell_points_b;
+    #else
+        vtkIdType *cell_points_a, *cell_points_b;
+    #endif
     cells_a->InitTraversal();
     cells_b->InitTraversal();
     int get_next_cell_a = cells_a->GetNextCell(n_cell_points_a, cell_points_a);
