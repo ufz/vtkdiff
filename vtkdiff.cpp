@@ -85,7 +85,7 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
 {
     TCLAP::CmdLine cmd(
         "VtkDiff software.\n"
-        "Copyright (c) 2015-2020, OpenGeoSys Community "
+        "Copyright (c) 2015-2021, OpenGeoSys Community "
         "(http://www.opengeosys.org) "
         "Distributed under a Modified BSD License. "
         "See accompanying file LICENSE.txt or "
