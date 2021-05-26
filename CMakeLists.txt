@@ -35,13 +35,18 @@ if(COMPILER_IS_INTEL)
     target_compile_options(vtkdiff PUBLIC -xHOST -no-prec-div)
 endif()
 
-if (COMPILER_IS_MSVC)
-    target_compile_options(vtkdiff PUBLIC
-        _CRT_SECURE_NO_WARNINGS
-        _CRT_NONSTDC_NO_WARNINGS
-        _CRT_XNONSTDC_NO_WARNINGS
-        __restrict__=__restrict   # this fixes #5
-        NOMINMAX # This fixes compile errors with std::numeric_limits<T>::min() / max()
-        /W3 /wd4290 /wd4267 /wd4996
+if(COMPILER_IS_MSVC)
+    target_compile_options(
+        vtkdiff
+        PUBLIC _CRT_SECURE_NO_WARNINGS
+               _CRT_NONSTDC_NO_WARNINGS
+               _CRT_XNONSTDC_NO_WARNINGS
+               __restrict__=__restrict # this fixes #5
+               NOMINMAX # This fixes compile errors with
+                        # std::numeric_limits<T>::min() / max()
+               /W3
+               /wd4290
+               /wd4267
+               /wd4996
     )
-endif ()
+endif()
