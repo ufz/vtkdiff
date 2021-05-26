@@ -1,18 +1,63 @@
 cmake_minimum_required(VERSION 3.1)
+project(vtkdiff)
 
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    find_package(VTK REQUIRED)
-    include(${VTK_USE_FILE})
+# --- CPM ---
+include(cmake/CPM.cmake)
+CPMAddPackage(
+    NAME tclap
+    GITHUB_REPOSITORY ufz/tclap
+    GIT_TAG 03abc3a3327214137c6ffd5b9a6efe23f0927cc2
+    DOWNLOAD_ONLY YES
+)
+if(tclap_ADDED)
+    add_library(tclap INTERFACE IMPORTED)
+    target_include_directories(
+        tclap SYSTEM INTERFACE ${tclap_SOURCE_DIR}/include
+    )
 endif()
 
-include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/tclap/include)
+set(VTK_COMPONENTS vtkIOXML)
+find_package(VTK 8.2.0 QUIET COMPONENTS ${VTK_COMPONENTS})
+
+if(VTK_FOUND)
+    include(${VTK_USE_FILE})
+else()
+    list(
+        APPEND
+        VTK_OPTIONS
+        "BUILD_SHARED_LIBS OFF"
+        "BUILD_TESTING OFF"
+        "VTK_BUILD_EXAMPLES OFF"
+        "VTK_BUILD_TESTING OFF"
+        "VTK_ENABLE_WRAPPING OFF"
+        "VTK_Group_Rendering OFF"
+        "VTK_Group_StandAlone OFF"
+        "VTK_USE_64BIT_IDS ON"
+    )
+    foreach(comp ${VTK_COMPONENTS})
+        list(APPEND VTK_OPTIONS "Module_${comp} ON")
+    endforeach()
+
+    # Workaround for configuration error in [vtk]/CMake/vtkGroups.cmake:43
+    set(VTK_Group_Rendering OFF CACHE BOOL "")
+    set(VTK_Group_StandAlone OFF CACHE BOOL "")
+
+    CPMAddPackage(
+        NAME VTK
+        GITHUB_REPOSITORY kitware/vtk
+        VERSION 8.2.0
+        OPTIONS ${VTK_OPTIONS}
+        EXCLUDE_FROM_ALL YES GIT_SUBMODULES "" # Disable submodules
+    )
+    include(${VTK_BINARY_DIR}/VTKConfig.cmake)
+endif()
+# --- CPM end ---
 
 add_executable(vtkdiff vtkdiff.cpp)
-
-target_link_libraries(vtkdiff ${VTK_LIBRARIES})
+target_include_directories(vtkdiff SYSTEM PRIVATE ${VTK_INCLUDE_DIRS})
+target_link_libraries(vtkdiff tclap ${VTK_LIBRARIES})
 
 # Set compiler helper variables
-
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     set(COMPILER_IS_CLANG TRUE)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
