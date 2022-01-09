@@ -8,6 +8,6 @@ the vtkdiff tool shall provide means of numerical comparison of different
 data arrays similar to those available in the numdiff software.
 
 # License and copyright
-Copyright (c) 2015-2021, OpenGeoSys Community (http://www.opengeosys.org)
+Copyright (c) 2015-2022, OpenGeoSys Community (http://www.opengeosys.org)
 Distributed under a Modified BSD License.
 See accompanying file LICENSE.txt or http://www.opengeosys.org/project/license.
