@@ -20,7 +20,7 @@ if(tclap_ADDED)
 endif()
 
 set(VTK_COMPONENTS vtkIOXML)
-find_package(VTK 8.2.0 QUIET COMPONENTS ${VTK_COMPONENTS})
+find_package(VTK 8.1.0 QUIET COMPONENTS ${VTK_COMPONENTS})
 
 if(VTK_FOUND)
     include(${VTK_USE_FILE})
@@ -48,7 +48,7 @@ else()
     CPMAddPackage(
         NAME VTK
         GITHUB_REPOSITORY kitware/vtk
-        VERSION 8.2.0
+        VERSION 8.1.0
         OPTIONS ${VTK_OPTIONS}
         EXCLUDE_FROM_ALL YES GIT_SUBMODULES "" # Disable submodules
     )
