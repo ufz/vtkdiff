@@ -19,12 +19,10 @@ if(tclap_ADDED)
     )
 endif()
 
-set(VTK_COMPONENTS vtkIOXML)
-find_package(VTK 8.2.0 QUIET COMPONENTS ${VTK_COMPONENTS})
+set(VTK_COMPONENTS IOXML)
+find_package(VTK 9 QUIET COMPONENTS ${VTK_COMPONENTS})
 
-if(VTK_FOUND)
-    include(${VTK_USE_FILE})
-else()
+if(NOT VTK_FOUND)
     list(
         APPEND
         VTK_OPTIONS
@@ -33,32 +31,24 @@ else()
         "VTK_BUILD_EXAMPLES OFF"
         "VTK_BUILD_TESTING OFF"
         "VTK_ENABLE_WRAPPING OFF"
-        "VTK_Group_Rendering OFF"
-        "VTK_Group_StandAlone OFF"
+        "VTK_GROUP_ENABLE_Rendering DONT_WANT"
+        "VTK_GROUP_ENABLE_StandAlone DONT_WANT"
         "VTK_USE_64BIT_IDS ON"
+        "VTK_MODULE_ENABLE_VTK_IOXML YES"
     )
-    foreach(comp ${VTK_COMPONENTS})
-        list(APPEND VTK_OPTIONS "Module_${comp} ON")
-    endforeach()
-
-    # Workaround for configuration error in [vtk]/CMake/vtkGroups.cmake:43
-    set(VTK_Group_Rendering OFF CACHE BOOL "")
-    set(VTK_Group_StandAlone OFF CACHE BOOL "")
 
     CPMAddPackage(
         NAME VTK
         GITHUB_REPOSITORY kitware/vtk
-        VERSION 8.2.0
+        VERSION 9.1.0
         OPTIONS ${VTK_OPTIONS}
         EXCLUDE_FROM_ALL YES GIT_SUBMODULES "" # Disable submodules
     )
-    include(${VTK_BINARY_DIR}/VTKConfig.cmake)
 endif()
 # --- CPM end ---
 
 add_executable(vtkdiff vtkdiff.cpp)
-target_include_directories(vtkdiff SYSTEM PRIVATE ${VTK_INCLUDE_DIRS})
-target_link_libraries(vtkdiff tclap ${VTK_LIBRARIES})
+target_link_libraries(vtkdiff tclap VTK::IOXML)
 
 # Set compiler helper variables
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
