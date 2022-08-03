@@ -6,18 +6,7 @@
  *              http://www.opengeosys.org/project/license
  */
 
-#include <algorithm>
-#include <cmath>
-#include <cstdlib>
-#include <iomanip>
-#include <ios>
-#include <iterator>
-#include <sstream>
-#include <tuple>
-#include <type_traits>
-
 #include <tclap/CmdLine.h>
-
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkCommand.h>
@@ -28,6 +17,17 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkVersion.h>
 #include <vtkXMLUnstructuredGridReader.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <iomanip>
+#include <ios>
+#include <iterator>
+#include <optional>
+#include <sstream>
+#include <tuple>
+#include <type_traits>
 
 template <typename T>
 auto float_to_string(T const& v) -> std::string
@@ -183,6 +183,13 @@ public:
     }
 };
 
+enum class Domain
+{
+    Point,
+    Cell,
+    Field
+};
+
 vtkSmartPointer<vtkUnstructuredGrid> readMesh(std::string const& filename)
 {
     if (filename.empty())
@@ -215,6 +222,65 @@ readMeshes(std::string const& file_a_name, std::string const& file_b_name)
     return {readMesh(file_a_name), readMesh(file_b_name)};
 }
 
+std::optional<Domain> determineDomain(vtkUnstructuredGrid& mesh,
+                                      std::string const& data_array_name)
+{
+    if (mesh.GetPointData()->HasArray(data_array_name.c_str()))
+    {
+        return Domain::Point;
+    }
+    else if (mesh.GetCellData()->HasArray(data_array_name.c_str()))
+    {
+        return Domain::Cell;
+    }
+    else if (mesh.GetFieldData()->HasArray(data_array_name.c_str()))
+    {
+        return Domain::Field;
+    }
+    else
+    {
+        std::cerr << "Error: Scalars data array "
+                  << "\'" << data_array_name.c_str() << "\'"
+                  << " neither found in point data nor in cell data nor in "
+                     "field data.\n";
+        return std::nullopt;
+    }
+}
+
+vtkSmartPointer<vtkDataArray> getDataArray(vtkUnstructuredGrid& mesh,
+                                           std::string const& data_array_name,
+                                           Domain domain)
+{
+    vtkSmartPointer<vtkDataArray> data_array;
+
+    switch (domain)
+    {
+        case Domain::Point:
+            data_array =
+                mesh.GetPointData()->GetScalars(data_array_name.c_str());
+            break;
+        case Domain::Cell:
+            data_array =
+                mesh.GetCellData()->GetScalars(data_array_name.c_str());
+            break;
+        case Domain::Field:
+            // GetArray() is not recommended for use, but according to the VTK
+            // API docs it is OK here, because we want to get a vtkDataArray.
+            data_array = mesh.GetFieldData()->GetArray(data_array_name.c_str());
+            break;
+    }
+
+    // Check arrays' validity
+    if (!data_array)
+    {
+        std::cerr << "Error: Scalars data array "
+                  << "\'" << data_array_name.c_str() << "\'"
+                  << " could not be read.\n";
+    }
+
+    return data_array;
+}
+
 std::tuple<bool, vtkSmartPointer<vtkDataArray>, vtkSmartPointer<vtkDataArray>>
 readDataArraysFromMeshes(
     std::tuple<vtkSmartPointer<vtkUnstructuredGrid>,
@@ -228,47 +294,23 @@ readDataArraysFromMeshes(
         return {false, nullptr, nullptr};
     }
 
-    bool point_data(false);
-    if (std::get<0>(meshes)->GetPointData()->HasArray(
-            data_array_a_name.c_str()))
+    auto const opt_domain =
+        determineDomain(*std::get<0>(meshes), data_array_a_name);
+
+    if (!opt_domain)
     {
-        point_data = true;
+        return {false, nullptr, nullptr};
     }
-    else if (std::get<0>(meshes)->GetCellData()->HasArray(
-                 data_array_a_name.c_str()))
-    {
-        point_data = false;
-    }
-    else
-    {
-        std::cerr << "Error: Scalars data array "
-                  << "\'" << data_array_a_name.c_str() << "\'"
-                  << " neither found in point data nor in cell data.\n";
-        return std::make_tuple(false, nullptr, nullptr);
-    }
+
+    auto const domain = *opt_domain;
 
     // Get arrays
-    vtkSmartPointer<vtkDataArray> a;
-    if (point_data)
-    {
-        a = vtkSmartPointer<vtkDataArray>{
-            std::get<0>(meshes)->GetPointData()->GetScalars(
-                data_array_a_name.c_str())};
-    }
-    else
-    {
-        a = vtkSmartPointer<vtkDataArray>{
-            std::get<0>(meshes)->GetCellData()->GetScalars(
-                data_array_a_name.c_str())};
-    }
+    vtkSmartPointer<vtkDataArray> a =
+        getDataArray(*std::get<0>(meshes), data_array_a_name, domain);
 
-    // Check arrays' validity
     if (!a)
     {
-        std::cerr << "Error: Scalars data array "
-                  << "\'" << data_array_a_name.c_str() << "\'"
-                  << " could not be read.\n";
-        return std::make_tuple(false, nullptr, nullptr);
+        return {false, nullptr, nullptr};
     }
 
     vtkSmartPointer<vtkDataArray> b;
@@ -281,44 +323,20 @@ readDataArraysFromMeshes(
                       << "' from first file to itself. Aborting.\n";
             std::exit(3);
         }
-        if (point_data)
-        {
-            b = vtkSmartPointer<vtkDataArray>{
-                std::get<0>(meshes)->GetPointData()->GetScalars(
-                    data_array_b_name.c_str())};
-        }
-        else
-        {
-            b = vtkSmartPointer<vtkDataArray>{
-                std::get<0>(meshes)->GetCellData()->GetScalars(
-                    data_array_b_name.c_str())};
-        }
+
+        b = getDataArray(*std::get<0>(meshes), data_array_b_name, domain);
     }
     else
     {
-        if (point_data)
-        {
-            b = vtkSmartPointer<vtkDataArray>{
-                std::get<1>(meshes)->GetPointData()->GetScalars(
-                    data_array_b_name.c_str())};
-        }
-        else
-        {
-            b = vtkSmartPointer<vtkDataArray>{
-                std::get<1>(meshes)->GetCellData()->GetScalars(
-                    data_array_b_name.c_str())};
-        }
+        b = getDataArray(*std::get<1>(meshes), data_array_b_name, domain);
     }
 
     if (!b)
     {
-        std::cerr << "Error: Scalars data array "
-                  << "\'" << data_array_b_name.c_str() << "\'"
-                  << " not found.\n";
-        return std::make_tuple(false, nullptr, nullptr);
+        return {false, nullptr, nullptr};
     }
 
-    return std::make_tuple(true, a, b);
+    return {true, a, b};
 }
 
 bool compareCellTopology(vtkCellArray* const cells_a,
@@ -337,11 +355,11 @@ bool compareCellTopology(vtkCellArray* const cells_a,
     }
 
     vtkIdType n_cell_points_a, n_cell_points_b;
-    #if (VTK_MAJOR_VERSION > 8 || VTK_MINOR_VERSION == 90)
-        const vtkIdType *cell_points_a, *cell_points_b;
-    #else
-        vtkIdType *cell_points_a, *cell_points_b;
-    #endif
+#if (VTK_MAJOR_VERSION > 8 || VTK_MINOR_VERSION == 90)
+    const vtkIdType *cell_points_a, *cell_points_b;
+#else
+    vtkIdType *cell_points_a, *cell_points_b;
+#endif
     cells_a->InitTraversal();
     cells_b->InitTraversal();
     int get_next_cell_a = cells_a->GetNextCell(n_cell_points_a, cell_points_a);
