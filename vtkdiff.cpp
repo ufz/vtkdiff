@@ -288,14 +288,15 @@ readDataArraysFromMeshes(
     std::string const& data_array_a_name,
     std::string const& data_array_b_name)
 {
-    if (std::get<0>(meshes) == nullptr)
+    auto const& [mesh_a_ptr, mesh_b_ptr] = meshes;
+
+    if (mesh_a_ptr == nullptr)
     {
         std::cerr << "First mesh was not read correctly and is a nullptr.\n";
         return {false, nullptr, nullptr};
     }
 
-    auto const opt_domain =
-        determineDomain(*std::get<0>(meshes), data_array_a_name);
+    auto const opt_domain = determineDomain(*mesh_a_ptr, data_array_a_name);
 
     if (!opt_domain)
     {
@@ -306,7 +307,7 @@ readDataArraysFromMeshes(
 
     // Get arrays
     vtkSmartPointer<vtkDataArray> a =
-        getDataArray(*std::get<0>(meshes), data_array_a_name, domain);
+        getDataArray(*mesh_a_ptr, data_array_a_name, domain);
 
     if (!a)
     {
@@ -314,7 +315,7 @@ readDataArraysFromMeshes(
     }
 
     vtkSmartPointer<vtkDataArray> b;
-    if (std::get<1>(meshes) == nullptr)
+    if (mesh_b_ptr == nullptr)
     {
         if (data_array_a_name == data_array_b_name)
         {
@@ -324,11 +325,11 @@ readDataArraysFromMeshes(
             std::exit(3);
         }
 
-        b = getDataArray(*std::get<0>(meshes), data_array_b_name, domain);
+        b = getDataArray(*mesh_a_ptr, data_array_b_name, domain);
     }
     else
     {
-        b = getDataArray(*std::get<1>(meshes), data_array_b_name, domain);
+        b = getDataArray(*mesh_b_ptr, data_array_b_name, domain);
     }
 
     if (!b)
