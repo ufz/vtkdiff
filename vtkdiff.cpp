@@ -1,6 +1,6 @@
 /**
  * \copyright
- * Copyright (c) 2015-2022, OpenGeoSys Community (http://www.opengeosys.org)
+ * Copyright (c) 2015-2023, OpenGeoSys Community (http://www.opengeosys.org)
  *            Distributed under a Modified BSD License.
  *              See accompanying file LICENSE.txt or
  *              http://www.opengeosys.org/project/license
@@ -85,7 +85,7 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
 {
     TCLAP::CmdLine cmd(
         "VtkDiff software.\n"
-        "Copyright (c) 2015-2022, OpenGeoSys Community "
+        "Copyright (c) 2015-2023, OpenGeoSys Community "
         "(http://www.opengeosys.org) "
         "Distributed under a Modified BSD License. "
         "See accompanying file LICENSE.txt or "
