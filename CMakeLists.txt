@@ -1,8 +1,12 @@
-cmake_minimum_required(VERSION 3.1)
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
-    cmake_policy(SET CMP0074 NEW)
-endif()
+cmake_minimum_required(VERSION 3.12)
+cmake_policy(SET CMP0074 NEW)
+
 project(vtkdiff)
+
+# C++ standard setup
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # --- CPM ---
 include(cmake/CPM.cmake)
