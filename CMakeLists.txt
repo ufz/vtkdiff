@@ -1,15 +1,20 @@
-cmake_minimum_required(VERSION 3.1)
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
-    cmake_policy(SET CMP0074 NEW)
-endif()
+cmake_minimum_required(VERSION 3.12)
+cmake_policy(SET CMP0074 NEW)
+
 project(vtkdiff)
+
+# C++ standard setup
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # --- CPM ---
 include(cmake/CPM.cmake)
-CPMAddPackage(
+CPMFindPackage(
     NAME tclap
     GITHUB_REPOSITORY ufz/tclap
-    GIT_TAG 03abc3a3327214137c6ffd5b9a6efe23f0927cc2
+    VERSION 1.2.4
+    GIT_TAG 098dd0fe07a31618f3c2a9f8727bb01c8c5d61e2
     DOWNLOAD_ONLY YES
 )
 if(tclap_ADDED)
