@@ -602,7 +602,7 @@ int main(int argc, char* argv[])
         std::transform(std::begin(rel_err_norm_2_2), std::end(rel_err_norm_2_2),
                        std::back_inserter(rel_err_norm_2),
                        [](double x) { return std::sqrt(x); });
-        std::cout << "rel l2-norm      = " << rel_err_norm_2_2 << "\n";
+        std::cout << "rel l2-norm      = " << rel_err_norm_2 << "\n";
 
         std::cout << "rel maximum norm = " << rel_err_norm_max << "\n";
     }
