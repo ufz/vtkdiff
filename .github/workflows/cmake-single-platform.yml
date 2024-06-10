@@ -41,5 +41,5 @@ jobs:
       run: ./vtkdiff --help
     - name: Coverage
       working-directory: ${{github.workspace}}/build
-      run: pipx run gcovr -r ${{github.workspace}}
+      run: pipx run gcovr -r ${{github.workspace}} --exclude ${{github.workspace}}/build/_deps
 
