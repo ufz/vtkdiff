@@ -52,6 +52,28 @@ if(NOT VTK_FOUND)
 endif()
 # --- CPM end ---
 
+# Coverage (enabled by Debug-config)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND ${PROJECT_SOURCE_DIR} STREQUAL
+                                              ${CMAKE_SOURCE_DIR}
+)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        set(CMAKE_CXX_FLAGS_DEBUG "-g -Og --coverage")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            string(APPEND CMAKE_CXX_FLAGS_DEBUG " -fprofile-abs-path")
+        endif()
+        set(CMAKE_EXE_LINKER_FLAGS_DEBUG "--coverage")
+        set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "--coverage")
+        set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "--coverage")
+        message(STATUS "Setting coverage flags!")
+        message(
+            STATUS
+                "Run executables and the run:\n     gcovr -r ${PROJECT_SOURCE_DIR}"
+        )
+    else()
+        message(FATAL_ERROR "OGS_COVERAGE requires clang or gcc compiler!")
+    endif()
+endif()
+
 add_executable(vtkdiff vtkdiff.cpp)
 target_link_libraries(vtkdiff tclap VTK::IOXML)
 
