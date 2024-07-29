@@ -17,7 +17,7 @@ CPMFindPackage(
     GIT_TAG 098dd0fe07a31618f3c2a9f8727bb01c8c5d61e2
     DOWNLOAD_ONLY YES
 )
-if(tclap_ADDED)
+if(tclap_ADDED AND NOT TARGET tclap)
     add_library(tclap INTERFACE IMPORTED)
     target_include_directories(
         tclap SYSTEM INTERFACE ${tclap_SOURCE_DIR}/include
