@@ -1,4 +1,5 @@
 # VtkDiff
+
 Numerical comparison of data arrays in vtk files.
 
 For comparison of numerical simulation results with analytical solutions
@@ -8,6 +9,7 @@ the vtkdiff tool shall provide means of numerical comparison of different
 data arrays similar to those available in the numdiff software.
 
 # License and copyright
-Copyright (c) 2015-2024, OpenGeoSys Community (http://www.opengeosys.org)
+
+Copyright (c) 2015-2025, OpenGeoSys Community (<http://www.opengeosys.org>)
 Distributed under a Modified BSD License.
-See accompanying file LICENSE.txt or http://www.opengeosys.org/project/license.
+See accompanying file LICENSE.txt or <http://www.opengeosys.org/project/license>.
