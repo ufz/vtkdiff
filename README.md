@@ -11,5 +11,5 @@ data arrays similar to those available in the numdiff software.
 # License and copyright
 
 Copyright (c) 2015-2025, OpenGeoSys Community (<http://www.opengeosys.org>)
-Distributed under a Modified BSD License.
-See accompanying file LICENSE.txt or <http://www.opengeosys.org/project/license>.
+vtkdiff is distributed under the Modified BSD License. See the
+[LICENSE.txt][license-source] for the license text.
