@@ -12,9 +12,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(cmake/CPM.cmake)
 CPMFindPackage(
     NAME tclap
-    GITHUB_REPOSITORY ufz/tclap
-    VERSION 1.2.4
-    GIT_TAG 098dd0fe07a31618f3c2a9f8727bb01c8c5d61e2
+    GIT_REPOSITORY https://git.code.sf.net/p/tclap/code
+    VERSION 1.4.0
+    GIT_TAG 81b3d2a0c47895c22e9bb8c577f5ab521f76e5d2
     DOWNLOAD_ONLY YES
 )
 if(tclap_ADDED AND NOT TARGET tclap)
