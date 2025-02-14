@@ -84,6 +84,7 @@ endif()
 
 add_executable(vtkdiff vtkdiff.cpp)
 target_link_libraries(vtkdiff tclap VTK::IOXML)
+install(TARGETS vtkdiff RUNTIME)
 
 # Set compiler helper variables
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
