@@ -10,18 +10,26 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # --- CPM ---
 include(cmake/CPM.cmake)
-CPMFindPackage(
-    NAME tclap
-    GIT_REPOSITORY https://git.code.sf.net/p/tclap/code
-    VERSION 1.4.0
-    GIT_TAG 81b3d2a0c47895c22e9bb8c577f5ab521f76e5d2
-    DOWNLOAD_ONLY YES
-)
-if(tclap_ADDED AND NOT TARGET tclap)
+if(GUIX_BUILD)
+    find_path(_tclap_include UnlabeledValueArg.h PATH_SUFFIXES tclap REQUIRED)
     add_library(tclap INTERFACE IMPORTED)
     target_include_directories(
-        tclap SYSTEM INTERFACE ${tclap_SOURCE_DIR}/include
+        tclap SYSTEM INTERFACE ${_tclap_include} ${_tclap_include}/..
     )
+else()
+    CPMFindPackage(
+        NAME tclap
+        GIT_REPOSITORY https://git.code.sf.net/p/tclap/code
+        GIT_TAG 81b3d2a0c47895c22e9bb8c577f5ab521f76e5d2
+        VERSION 1.4.0
+        DOWNLOAD_ONLY YES
+    )
+    if(tclap_ADDED)
+        add_library(tclap INTERFACE IMPORTED)
+        target_include_directories(
+            tclap SYSTEM INTERFACE ${tclap_SOURCE_DIR}/include
+        )
+    endif()
 endif()
 
 set(VTK_COMPONENTS IOXML)
