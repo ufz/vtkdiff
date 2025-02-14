@@ -1,7 +1,7 @@
 /**
  * \copyright
  * Copyright (c) 2015-2025, OpenGeoSys Community (http://www.opengeosys.org)
- *            Distributed under a Modified BSD License.
+ *            Distributed under the BSD 3-Clause "New" or "Revised" license.
  *              See accompanying file LICENSE.txt or
  *              http://www.opengeosys.org/project/license
  */
@@ -87,11 +87,11 @@ auto parseCommandLine(int argc, char* argv[]) -> Args
         "VtkDiff software.\n"
         "Copyright (c) 2015-2025, OpenGeoSys Community "
         "(http://www.opengeosys.org) "
-        "Distributed under a Modified BSD License. "
+        "Distributed under the BSD 3-Clause 'New' or 'Revised' License. "
         "See accompanying file LICENSE.txt or "
         "http://www.opengeosys.org/project/license",
         ' ',
-        "0.1");
+        "1.0.0");
 
     TCLAP::UnlabeledValueArg<std::string> vtk_input_a_arg(
         "input-file-a",
