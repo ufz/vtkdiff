@@ -419,7 +419,7 @@ bool comparePoints(vtkPoints* const points_a, vtkPoints* const points_b,
     if (n_points_a != n_points_b)
     {
         std::cerr << "Number of points in the first mesh is " << n_points_a
-                  << " and differst from the number of point in the second "
+                  << " and differs from the number of points in the second "
                      "mesh, which is "
                   << n_points_b << "\n";
         return false;
@@ -459,23 +459,38 @@ int main(int argc, char* argv[])
 
     if (args.meshcheck)
     {
+        if (args.vtk_input_b.empty())
+        {
+            std::cerr
+                << "Error: Second input file must be provided for mesh check."\
+                << "\n";
+            return EXIT_FAILURE;
+        }
+
+        if (!std::get<0>(meshes) || !std::get<1>(meshes))
+        {
+            std::cerr << "Error reading mesh file(s)." << std::endl;
+            return EXIT_FAILURE;
+        }
+
         if (args.vtk_input_a == args.vtk_input_b)
         {
             std::cout << "Will not compare meshes from same input file.\n";
             return EXIT_SUCCESS;
         }
+
         if (!comparePoints(std::get<0>(meshes)->GetPoints(),
                            std::get<1>(meshes)->GetPoints(),
                            args.abs_err_thr * args.abs_err_thr))
         {
-            std::cerr << "Error in mesh points' comparison occured.\n";
+            std::cerr << "Error in mesh points' comparison occurred.\n";
             return EXIT_FAILURE;
         }
 
         if (!compareCellTopology(std::get<0>(meshes)->GetCells(),
                                  std::get<1>(meshes)->GetCells()))
         {
-            std::cerr << "Error in cells' topology comparison occured.\n";
+            std::cerr << "Error in cells' topology comparison occurred.\n";
             return EXIT_FAILURE;
         }
         return EXIT_SUCCESS;
